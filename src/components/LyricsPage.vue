@@ -34,7 +34,7 @@
       <!-- Lyrics display as circle -->
       <div class="lyrics-content circle-lyrics-content">
         <div class="spiral-container">
-          <svg :width="svgSize" :height="svgSize" :viewBox="`-50 -50 ${svgSize + 100} ${svgSize + 100}`">
+          <svg :width="svgSize" :height="svgSize" :viewBox="`0 0 ${svgSize} ${svgSize}`">
             <!-- Add center circle -->
             <circle :cx="svgSize/2" :cy="svgSize/2" :r="svgSize * 0.2" fill="none" stroke="black" stroke-width="2" />
             <g v-if="spiralLetters.length">
@@ -93,12 +93,14 @@ export default {
       const chars = [...text];
       if (chars.length === 0) return [];
 
-      const cx = this.svgSize / 2, cy = this.svgSize / 2;
-      const safetyMargin = 30;
-      const maxRadius = (this.svgSize / 2) - safetyMargin;
-      const endRadius = this.svgSize * 0.25;
+      // Use the same svgSize as the SVG element
+      const svgSize = this.svgSize;
+      const cx = svgSize / 2, cy = svgSize / 2;
+      const safetyMargin = 60;
+      const maxRadius = (svgSize / 2) - safetyMargin;
+      const endRadius = svgSize * 0.25;
 
-      const spacing = Math.max(1.0, Math.min(2.0, 400 / chars.length));
+      const spacing = 2.5;
       const totalAngle = ((chars.length - 1) * spacing) / 180 * Math.PI;
       const spiralShrink = (maxRadius - endRadius) / totalAngle;
 
@@ -118,21 +120,13 @@ export default {
         lastChar = chars[i];
         actualCharCount++;
 
-        // Progress from outer to inner (0 to 1)
-        const progress = (maxRadius - r) / (maxRadius - endRadius);
-
-        // Dynamically scale font size (e.g. 12px outer, 6px inner)
-        const fontSize = 12 - (progress * 6);
-
-        let letterSpacing = 1.0 + (progress * 1.5);
-
         result.push({
           char: chars[i],
           angle: rotation,
           x,
           y,
-          letterSpacing: letterSpacing.toFixed(1),
-          fontSize: fontSize.toFixed(1)
+          letterSpacing: 1.0,
+          fontSize: 12
         });
       }
 
@@ -143,16 +137,16 @@ export default {
     async fetchLyrics() {
       this.loading = true
       this.error = null
-      
+
       try {
         // First try to get lyrics by ID
         const response = await axios.get(`https://lrclib.net/api/get/${this.id}`)
         this.songData = response.data
-        
+
         // If no lyrics found by ID, try to get from query params
-        if (!this.songData.plainLyrics && !this.songData.syncedLyrics) {
+        if(!this.songData.plainLyrics && !this.songData.syncedLyrics) {
           const { trackName, artistName } = this.$route.query
-          if (trackName && artistName) {
+          if(trackName && artistName) {
             const searchResponse = await axios.get('https://lrclib.net/api/get', {
               params: {
                 artist_name: artistName,
@@ -162,9 +156,9 @@ export default {
             this.songData = { ...this.songData, ...searchResponse.data }
           }
         }
-        
+
         // Fallback to query params for song info if not in API response
-        if (!this.songData.trackName) {
+        if(!this.songData.trackName) {
           this.songData = {
             ...this.songData,
             trackName: this.$route.query.trackName || 'Unknown Title',
@@ -172,11 +166,11 @@ export default {
             albumName: this.$route.query.albumName || ''
           }
         }
-        
-      } catch (err) {
+
+      } catch(err) {
         console.error('Error fetching lyrics:', err)
         this.error = 'Failed to load lyrics. Please try again.'
-        
+
         // Use query params as fallback
         this.songData = {
           trackName: this.$route.query.trackName || 'Unknown Title',
@@ -189,12 +183,12 @@ export default {
         this.loading = false
       }
     },
-    
+
     formatSyncedLyrics(syncedLyrics) {
       // Remove timestamp markers from synced lyrics
       return syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2}\]/g, '').trim()
     },
-    
+
     goBack() {
       this.$router.push('/')
     }
@@ -252,8 +246,12 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-container {
@@ -389,24 +387,24 @@ export default {
   .lyrics-page {
     padding: 15px;
   }
-  
+
   .song-header {
     padding: 25px 20px;
     margin-bottom: 20px;
   }
-  
+
   .song-title {
     font-size: 2rem;
   }
-  
+
   .artist-name {
     font-size: 1.5rem;
   }
-  
+
   .album-name {
     font-size: 1.1rem;
   }
-  
+
   .lyrics-content {
     min-height: 550px;
     padding: 15px;
@@ -429,19 +427,19 @@ export default {
   .lyrics-page {
     padding: 10px;
   }
-  
+
   .song-header {
     padding: 20px 15px;
   }
-  
+
   .song-title {
     font-size: 1.8rem;
   }
-  
+
   .artist-name {
     font-size: 1.3rem;
   }
-  
+
   .lyrics-content {
     min-height: 450px;
     padding: 10px;
