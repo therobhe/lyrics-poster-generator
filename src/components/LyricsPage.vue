@@ -33,19 +33,21 @@
 
       <!-- Lyrics display as circle -->
       <div class="lyrics-content circle-lyrics-content">
-        <svg :width="svgSize" :height="svgSize" viewBox="0 0 400 400">
-          <g v-if="spiralLetters.length">
-            <text v-for="(char, i) in spiralLetters" :key="i"
-                  :x="char.x" :y="char.y"
-                  :transform="`rotate(${char.angle} ${char.x} ${char.y})`"
-                  text-anchor="middle"
-                  alignment-baseline="middle"
-                  class="circle-lyrics-letter"
-                  style="font-family: 'Inter', system-ui, sans-serif;">
-              {{ char.char }}
-            </text>
-          </g>
-        </svg>
+        <div class="spiral-container">
+          <svg :width="svgSize" :height="svgSize" :viewBox="`-50 -50 ${svgSize + 100} ${svgSize + 100}`">
+            <g v-if="spiralLetters.length">
+              <text v-for="(char, i) in spiralLetters" :key="i"
+                    :x="char.x" :y="char.y"
+                    :transform="`rotate(${char.angle} ${char.x} ${char.y})`"
+                    text-anchor="middle"
+                    alignment-baseline="middle"
+                    class="circle-lyrics-letter"
+                    :style="`font-family: 'Inter', system-ui, sans-serif; letter-spacing: ${char.letterSpacing}em; font-weight: bold;`">
+                {{ char.char }}
+              </text>
+            </g>
+          </svg>
+        </div>
         <div v-if="!spiralLetters.length" class="no-lyrics">
           <p>No lyrics available for this song.</p>
         </div>
@@ -77,35 +79,82 @@ export default {
   },
   computed: {
     svgSize() {
-      return 400;
+      // Increase SVG size to fit more text
+      return Math.min(Math.max(window.innerWidth * 0.8, 600), 1000);
     },
     circleRadius() {
-      return 160; // radius for text path
+      return this.svgSize / 2 - 60;
     },
     spiralLetters() {
-      // Use only plainLyrics for this effect, in uppercase
       if (!this.songData || !this.songData.plainLyrics) return [];
       const text = this.songData.plainLyrics.replace(/\n/g, ' ').toUpperCase();
       const chars = [...text];
       if (chars.length === 0) return [];
-      const cx = 200, cy = 200;
-      const startRadius = 60; // spiral starting radius
-      const spiralTurns = 6; // how many full turns the spiral makes
-      const totalAngle = spiralTurns * 2 * Math.PI;
-      const angleStep = totalAngle / chars.length;
-      const radiusStep = (140) / chars.length; // spiral outward
-      return chars.map((char, i) => {
-        const angle = i * angleStep - Math.PI / 2;
-        const r = startRadius + i * radiusStep;
-        // Tangent angle for upright text: +90deg from path
-        const tangent = angle + Math.PI / 2;
-        return {
-          char,
-          angle: tangent * 180 / Math.PI,
-          x: cx + r * Math.cos(angle),
-          y: cy + r * Math.sin(angle)
-        };
-      });
+
+      const cx = this.svgSize / 2, cy = this.svgSize / 2;
+
+      // Calculate parameters based on text length for optimal display
+      const contentLength = chars.length;
+      const safetyMargin = 30; // Reduced safety margin
+      const maxRadius = (this.svgSize / 2) - safetyMargin;
+
+      // Adjust starting radius and growth parameters
+      const startRadius = this.svgSize * 0.12; // Reduced center void
+
+      // Calculate spiral parameters to fit all text
+      // Increase growth to accommodate longer texts
+      const totalAngle = Math.min(contentLength * 8, 2000) / 180 * Math.PI;
+      const spiralGrowth = (maxRadius - startRadius) / totalAngle;
+
+      // Use variable spacing that adjusts based on text length
+      const baseSpacing = contentLength > 1000 ? 1.5 : (contentLength > 500 ? 2 : 2.5);
+      const spacing = Math.max(1.5, Math.min(baseSpacing, 600 / contentLength));
+
+      let result = [];
+      let lastChar = null;
+      let actualCharCount = 0; // Track how many characters we've actually placed
+
+      for (let i = 0; i < chars.length; i++) {
+        // Calculate angle based on index and spacing
+        const angle = (actualCharCount * spacing) / 180 * Math.PI;
+
+        // Create growing spiral using angle
+        const r = startRadius + (angle * spiralGrowth);
+
+        // Skip if radius exceeds maximum safe radius
+        if (r > maxRadius * 1.2) break; // Allow slightly exceeding max radius
+
+        // Calculate position
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+
+        // Calculate rotation for upright text
+        const rotation = (angle * 180 / Math.PI) + 90;
+
+        // Skip consecutive spaces to prevent crowding
+        if ((chars[i] === ' ' && lastChar === ' ') ||
+            (chars[i] === ' ' && i < 10)) {
+          continue;
+        }
+
+        lastChar = chars[i];
+        actualCharCount++; // Only increment for characters we actually place
+
+        // Calculate dynamic letter spacing based on position in spiral
+        // More spacing near the center, less as we move outward
+        const progress = r / maxRadius; // 0 to 1
+        const letterSpacing = 2.5 - (1.8 * progress); // Range from 2.5em (center) to 0.7em (outer)
+
+        result.push({
+          char: chars[i],
+          angle: rotation,
+          x,
+          y,
+          letterSpacing: letterSpacing.toFixed(1) // Format to 1 decimal place
+        });
+      }
+
+      return result;
     }
   },
   methods: {
@@ -270,7 +319,6 @@ export default {
 }
 
 .lyrics-container {
-  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -313,33 +361,58 @@ export default {
 .lyrics-content {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 20px;
-  padding: 40px;
+  padding: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
+  overflow: visible;
+  min-height: 650px; /* Ensure enough height for the spiral */
+  margin: 0 auto 30px;
+  max-width: 95vw;
 }
 
-.lyrics-text {
-  line-height: 1.8;
-  font-size: 1.1rem;
-  color: #333;
+.spiral-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  overflow: visible;
+  position: relative;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
-.lyrics-text pre {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  margin: 0;
-  font-size: inherit;
-  line-height: inherit;
+.spiral-container svg {
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+  display: block;
+  margin: 0 auto;
 }
 
-.no-lyrics {
-  text-align: center;
-  color: #999;
-  font-size: 1.2rem;
-  padding: 40px 20px;
+.circle-lyrics-letter {
+  font-size: 10px;
+  fill: #667eea;
+  transition: fill 0.3s ease;
+}
+
+/* Make inner text slightly larger for better readability */
+.circle-lyrics-letter:nth-child(-n+30) {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Special styling for the very first characters to improve visibility in the center */
+.circle-lyrics-letter:nth-child(-n+10) {
+  font-size: 14px;
+  font-weight: 900;
+  fill: #5046b5;
+}
+
+.circle-lyrics-letter:hover {
+  fill: #764ba2;
 }
 
 /* Responsive design */
@@ -366,12 +439,20 @@ export default {
   }
   
   .lyrics-content {
-    padding: 25px 20px;
+    min-height: 550px;
+    padding: 15px;
+  }
+
+  .circle-lyrics-letter {
+    font-size: 8px;
+  }
+
+  .circle-lyrics-letter:nth-child(-n+30) {
+    font-size: 10px;
   }
   
-  .lyrics-text {
-    font-size: 1rem;
-    line-height: 1.6;
+  .circle-lyrics-letter:nth-child(-n+10) {
+    font-size: 12px;
   }
 }
 
@@ -393,7 +474,20 @@ export default {
   }
   
   .lyrics-content {
-    padding: 20px 15px;
+    min-height: 450px;
+    padding: 10px;
+  }
+
+  .circle-lyrics-letter {
+    font-size: 6px;
+  }
+
+  .circle-lyrics-letter:nth-child(-n+30) {
+    font-size: 8px;
+  }
+
+  .circle-lyrics-letter:nth-child(-n+10) {
+    font-size: 10px;
   }
   
   .back-button {
