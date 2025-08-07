@@ -94,59 +94,37 @@ export default {
       if (chars.length === 0) return [];
 
       const cx = this.svgSize / 2, cy = this.svgSize / 2;
-
-      // Calculate parameters based on text length for optimal display
-      const contentLength = chars.length;
       const safetyMargin = 30;
       const maxRadius = (this.svgSize / 2) - safetyMargin;
+      const endRadius = this.svgSize * 0.25;
 
-      // Increase starting radius to create more space in the center
-      const startRadius = this.svgSize * 0.25; // Increased from 0.12 to 0.25
+      // Calculate total angle for all characters
+      const spacing = Math.max(1.0, Math.min(2.0, 400 / chars.length));
+      const totalAngle = ((chars.length - 1) * spacing) / 180 * Math.PI;
 
-      // Calculate spiral parameters to fit all text
-      const totalAngle = Math.min(contentLength * 8, 2000) / 180 * Math.PI;
-      const spiralGrowth = (maxRadius - startRadius) / totalAngle;
-
-      // Use larger spacing for characters (more natural looking)
-      const baseSpacing = contentLength > 1000 ? 1.8 : (contentLength > 500 ? 2.2 : 2.8);
-      const spacing = Math.max(1.8, Math.min(baseSpacing, 600 / contentLength));
+      // Spiral shrink so last char lands at endRadius
+      const spiralShrink = (maxRadius - endRadius) / totalAngle;
 
       let result = [];
       let lastChar = null;
       let actualCharCount = 0;
 
-      // Skip beginning characters to avoid overcrowding the center
-      const skipInitialChars = Math.min(20, Math.floor(chars.length * 0.02));
+      for (let i = 0; i < chars.length; i++) {
+        if (chars[i] === ' ' && lastChar === ' ') continue;
 
-      for (let i = skipInitialChars; i < chars.length; i++) {
-        // Skip multiple consecutive spaces
-        if (chars[i] === ' ' && lastChar === ' ') {
-          continue;
-        }
-
-        // Calculate angle based on index and spacing
         const angle = (actualCharCount * spacing) / 180 * Math.PI;
+        const r = Math.max(endRadius, maxRadius - (angle * spiralShrink));
 
-        // Create growing spiral using angle
-        const r = startRadius + (angle * spiralGrowth);
-
-        // Skip if radius exceeds maximum safe radius
-        if (r > maxRadius * 1.1) break;
-
-        // Calculate position
         const x = cx + r * Math.cos(angle);
         const y = cy + r * Math.sin(angle);
-
-        // Calculate rotation for upright text
         const rotation = (angle * 180 / Math.PI) + 90;
 
         lastChar = chars[i];
         actualCharCount++;
 
-        // Use more conservative letter spacing approach
-        // More space as we move outward instead of at the center
-        const progress = r / maxRadius; // 0 to 1
-        const letterSpacing = Math.min(2.0, 0.5 + progress * 1.5);
+        // Letter spacing logic (optional, can be simplified)
+        const progress = (maxRadius - r) / (maxRadius - endRadius);
+        let letterSpacing = 1.0 + (progress * 1.5);
 
         result.push({
           char: chars[i],
@@ -399,25 +377,6 @@ export default {
   font-size: 12px; /* Increased base font size */
   fill: black;
   transition: fill 0.3s ease;
-}
-
-/* Make inner text larger for better readability */
-.circle-lyrics-letter:nth-child(-n+30) {
-  font-size: 14px;
-  font-weight: 700;
-}
-
-/* Special styling for the very first characters */
-.circle-lyrics-letter:nth-child(-n+10) {
-  font-size: 16px;
-  font-weight: 800;
-  fill: black;
-}
-
-/* First few characters */
-.circle-lyrics-letter:nth-child(-n+5) {
-  font-size: 18px;
-  fill: black;
 }
 
 .circle-lyrics-letter:hover {
