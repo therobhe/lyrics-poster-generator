@@ -35,6 +35,8 @@
       <div class="lyrics-content circle-lyrics-content">
         <div class="spiral-container">
           <svg :width="svgSize" :height="svgSize" :viewBox="`-50 -50 ${svgSize + 100} ${svgSize + 100}`">
+            <!-- Add center circle -->
+            <circle :cx="svgSize/2" :cy="svgSize/2" :r="svgSize * 0.2" fill="none" stroke="black" stroke-width="2" />
             <g v-if="spiralLetters.length">
               <text v-for="(char, i) in spiralLetters" :key="i"
                     :x="char.x" :y="char.y"
@@ -95,26 +97,33 @@ export default {
 
       // Calculate parameters based on text length for optimal display
       const contentLength = chars.length;
-      const safetyMargin = 30; // Reduced safety margin
+      const safetyMargin = 30;
       const maxRadius = (this.svgSize / 2) - safetyMargin;
 
-      // Adjust starting radius and growth parameters
-      const startRadius = this.svgSize * 0.12; // Reduced center void
+      // Increase starting radius to create more space in the center
+      const startRadius = this.svgSize * 0.25; // Increased from 0.12 to 0.25
 
       // Calculate spiral parameters to fit all text
-      // Increase growth to accommodate longer texts
       const totalAngle = Math.min(contentLength * 8, 2000) / 180 * Math.PI;
       const spiralGrowth = (maxRadius - startRadius) / totalAngle;
 
-      // Use variable spacing that adjusts based on text length
-      const baseSpacing = contentLength > 1000 ? 1.5 : (contentLength > 500 ? 2 : 2.5);
-      const spacing = Math.max(1.5, Math.min(baseSpacing, 600 / contentLength));
+      // Use larger spacing for characters (more natural looking)
+      const baseSpacing = contentLength > 1000 ? 1.8 : (contentLength > 500 ? 2.2 : 2.8);
+      const spacing = Math.max(1.8, Math.min(baseSpacing, 600 / contentLength));
 
       let result = [];
       let lastChar = null;
-      let actualCharCount = 0; // Track how many characters we've actually placed
+      let actualCharCount = 0;
 
-      for (let i = 0; i < chars.length; i++) {
+      // Skip beginning characters to avoid overcrowding the center
+      const skipInitialChars = Math.min(20, Math.floor(chars.length * 0.02));
+
+      for (let i = skipInitialChars; i < chars.length; i++) {
+        // Skip multiple consecutive spaces
+        if (chars[i] === ' ' && lastChar === ' ') {
+          continue;
+        }
+
         // Calculate angle based on index and spacing
         const angle = (actualCharCount * spacing) / 180 * Math.PI;
 
@@ -122,7 +131,7 @@ export default {
         const r = startRadius + (angle * spiralGrowth);
 
         // Skip if radius exceeds maximum safe radius
-        if (r > maxRadius * 1.2) break; // Allow slightly exceeding max radius
+        if (r > maxRadius * 1.1) break;
 
         // Calculate position
         const x = cx + r * Math.cos(angle);
@@ -131,26 +140,20 @@ export default {
         // Calculate rotation for upright text
         const rotation = (angle * 180 / Math.PI) + 90;
 
-        // Skip consecutive spaces to prevent crowding
-        if ((chars[i] === ' ' && lastChar === ' ') ||
-            (chars[i] === ' ' && i < 10)) {
-          continue;
-        }
-
         lastChar = chars[i];
-        actualCharCount++; // Only increment for characters we actually place
+        actualCharCount++;
 
-        // Calculate dynamic letter spacing based on position in spiral
-        // More spacing near the center, less as we move outward
+        // Use more conservative letter spacing approach
+        // More space as we move outward instead of at the center
         const progress = r / maxRadius; // 0 to 1
-        const letterSpacing = 2.5 - (1.8 * progress); // Range from 2.5em (center) to 0.7em (outer)
+        const letterSpacing = Math.min(2.0, 0.5 + progress * 1.5);
 
         result.push({
           char: chars[i],
           angle: rotation,
           x,
           y,
-          letterSpacing: letterSpacing.toFixed(1) // Format to 1 decimal place
+          letterSpacing: letterSpacing.toFixed(1)
         });
       }
 
@@ -223,7 +226,7 @@ export default {
 <style scoped>
 .lyrics-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, black 0%, #764ba2 100%);
   padding: 20px;
 }
 
@@ -303,7 +306,7 @@ export default {
 }
 
 .retry-button {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, black, #764ba2);
   color: white;
   border: none;
   padding: 12px 30px;
@@ -337,7 +340,7 @@ export default {
   font-weight: 700;
   color: #333;
   margin-bottom: 10px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, black, #764ba2);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -347,7 +350,7 @@ export default {
 .artist-name {
   font-size: 1.8rem;
   font-weight: 500;
-  color: #667eea;
+  color: black;
   margin-bottom: 8px;
 }
 
@@ -393,22 +396,28 @@ export default {
 }
 
 .circle-lyrics-letter {
-  font-size: 10px;
-  fill: #667eea;
+  font-size: 12px; /* Increased base font size */
+  fill: black;
   transition: fill 0.3s ease;
 }
 
-/* Make inner text slightly larger for better readability */
+/* Make inner text larger for better readability */
 .circle-lyrics-letter:nth-child(-n+30) {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
 }
 
-/* Special styling for the very first characters to improve visibility in the center */
+/* Special styling for the very first characters */
 .circle-lyrics-letter:nth-child(-n+10) {
-  font-size: 14px;
-  font-weight: 900;
-  fill: #5046b5;
+  font-size: 16px;
+  font-weight: 800;
+  fill: black;
+}
+
+/* First few characters */
+.circle-lyrics-letter:nth-child(-n+5) {
+  font-size: 18px;
+  fill: black;
 }
 
 .circle-lyrics-letter:hover {
@@ -444,15 +453,15 @@ export default {
   }
 
   .circle-lyrics-letter {
-    font-size: 8px;
+    font-size: 10px; /* Adjusted for mobile */
   }
 
   .circle-lyrics-letter:nth-child(-n+30) {
-    font-size: 10px;
-  }
-  
-  .circle-lyrics-letter:nth-child(-n+10) {
     font-size: 12px;
+  }
+
+  .circle-lyrics-letter:nth-child(-n+10) {
+    font-size: 14px;
   }
 }
 
@@ -479,17 +488,17 @@ export default {
   }
 
   .circle-lyrics-letter {
-    font-size: 6px;
-  }
-
-  .circle-lyrics-letter:nth-child(-n+30) {
     font-size: 8px;
   }
 
-  .circle-lyrics-letter:nth-child(-n+10) {
+  .circle-lyrics-letter:nth-child(-n+30) {
     font-size: 10px;
   }
-  
+
+  .circle-lyrics-letter:nth-child(-n+10) {
+    font-size: 12px;
+  }
+
   .back-button {
     padding: 10px 20px;
     font-size: 0.9rem;
