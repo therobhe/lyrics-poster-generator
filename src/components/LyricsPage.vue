@@ -44,7 +44,7 @@
                     text-anchor="middle"
                     alignment-baseline="middle"
                     class="circle-lyrics-letter"
-                    :style="`font-family: 'Inter', system-ui, sans-serif; letter-spacing: ${char.letterSpacing}em; font-weight: bold;`">
+                    :style="`font-family: 'Inter', system-ui, sans-serif; letter-spacing: ${char.letterSpacing}em; font-weight: bold; font-size: ${char.fontSize}px;`">
                 {{ char.char }}
               </text>
             </g>
@@ -98,11 +98,8 @@ export default {
       const maxRadius = (this.svgSize / 2) - safetyMargin;
       const endRadius = this.svgSize * 0.25;
 
-      // Calculate total angle for all characters
       const spacing = Math.max(1.0, Math.min(2.0, 400 / chars.length));
       const totalAngle = ((chars.length - 1) * spacing) / 180 * Math.PI;
-
-      // Spiral shrink so last char lands at endRadius
       const spiralShrink = (maxRadius - endRadius) / totalAngle;
 
       let result = [];
@@ -114,7 +111,6 @@ export default {
 
         const angle = (actualCharCount * spacing) / 180 * Math.PI;
         const r = Math.max(endRadius, maxRadius - (angle * spiralShrink));
-
         const x = cx + r * Math.cos(angle);
         const y = cy + r * Math.sin(angle);
         const rotation = (angle * 180 / Math.PI) + 90;
@@ -122,8 +118,12 @@ export default {
         lastChar = chars[i];
         actualCharCount++;
 
-        // Letter spacing logic (optional, can be simplified)
+        // Progress from outer to inner (0 to 1)
         const progress = (maxRadius - r) / (maxRadius - endRadius);
+
+        // Dynamically scale font size (e.g. 12px outer, 6px inner)
+        const fontSize = 12 - (progress * 6);
+
         let letterSpacing = 1.0 + (progress * 1.5);
 
         result.push({
@@ -131,7 +131,8 @@ export default {
           angle: rotation,
           x,
           y,
-          letterSpacing: letterSpacing.toFixed(1)
+          letterSpacing: letterSpacing.toFixed(1),
+          fontSize: fontSize.toFixed(1)
         });
       }
 
