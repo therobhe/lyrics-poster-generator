@@ -36,7 +36,14 @@
         <div class="spiral-container">
           <svg :width="svgSize" :height="svgSize" :viewBox="`0 0 ${svgSize} ${svgSize}`">
             <!-- Add center circle -->
-            <circle :cx="svgSize/2" :cy="svgSize/2" :r="svgSize * 0.2" fill="none" stroke="black" stroke-width="2" />
+            <circle
+                :cx="svgSize/2"
+                :cy="svgSize/2"
+                :r="circleRadius"
+                fill="none"
+                stroke="black"
+                stroke-width="2"
+            />
             <g v-if="spiralLetters.length">
               <text v-for="(char, i) in spiralLetters" :key="i"
                     :x="char.x" :y="char.y"
@@ -85,7 +92,9 @@ export default {
       return Math.min(Math.max(window.innerWidth * 0.8, 600), 1000);
     },
     circleRadius() {
-      return this.svgSize / 2 - 60;
+      const remPx = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const endRadius = this.svgSize * 0.15;
+      return endRadius - remPx;
     },
     spiralLetters() {
       if (!this.songData || !this.songData.plainLyrics) return [];
@@ -93,12 +102,11 @@ export default {
       const chars = [...text];
       if (chars.length === 0) return [];
 
-      // Use the same svgSize as the SVG element
       const svgSize = this.svgSize;
       const cx = svgSize / 2, cy = svgSize / 2;
       const safetyMargin = 60;
       const maxRadius = (svgSize / 2) - safetyMargin;
-      const endRadius = svgSize * 0.25;
+      const endRadius = svgSize * 0.15; // Reduced gap to center
 
       const spacing = 2.5;
       const totalAngle = ((chars.length - 1) * spacing) / 180 * Math.PI;
@@ -186,7 +194,7 @@ export default {
 
     formatSyncedLyrics(syncedLyrics) {
       // Remove timestamp markers from synced lyrics
-      return syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2}\]/g, '').trim()
+      return syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2}/g, '').trim()
     },
 
     goBack() {
