@@ -1,13 +1,13 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
-import SearchPage from './components/SearchPage.vue'
-import LyricsPage from './components/LyricsPage.vue'
+import HomePage from './components/HomePage.vue'
+import LyricsPoster from './components/LyricsPoster.vue'
 import './style.css'
 
 const routes = [
-  { path: '/', component: SearchPage },
-  { path: '/lyrics/:id', component: LyricsPage, props: true }
+  { path: '/', component: HomePage },
+  { path: '/lyrics-poster', component: LyricsPoster }
 ]
 
 const router = createRouter({
