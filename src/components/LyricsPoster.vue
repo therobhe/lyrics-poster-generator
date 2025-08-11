@@ -23,7 +23,7 @@
             </div>
 
             <div v-else-if="spiralLetters.length" class="spiral-container">
-              <svg :width="svgSize" :height="svgSize" :viewBox="`0 0 ${svgSize} ${svgSize}`">
+              <svg class="spiral-svg" :width="svgSize" :height="svgSize" :viewBox="`0 0 ${svgSize} ${svgSize}`">
                 <!-- Center circle -->
                 <circle
                     :cx="svgSize/2"
@@ -761,6 +761,15 @@ export default {
   background: #9b2c2c;
 }
 
+.poster-preview,
+.search-controls {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+  padding: 40px;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .two-column-layout {
@@ -783,7 +792,16 @@ export default {
 
   .poster-preview,
   .search-controls {
-    padding: 20px;
+    padding: 10px;
+  }
+
+  .spiral-svg {
+    width: 100%;
+    height: auto;
+    max-width: 650px;
+    display: block;
+    margin: 0 auto;
+    max-width: 320px;
   }
 
   .poster-title {
