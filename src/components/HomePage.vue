@@ -35,7 +35,7 @@
       </div>
     </section>
 
-    <!-- Mood Gallery -->
+<!--    &lt;!&ndash; Mood Gallery &ndash;&gt;
     <section class="mood-gallery">
       <div class="container">
         <h2 class="section-title">Gallery of Inspirations</h2>
@@ -66,7 +66,7 @@
           </div>
         </div>
       </div>
-    </section>
+    </section>-->
   </div>
 </template>
 
@@ -177,7 +177,7 @@ export default {
   line-height: 1.6;
 }
 
-/* Mood Gallery */
+/*!* Mood Gallery *!
 .mood-gallery {
   padding: 80px 20px;
   background: #f8f9fa;
@@ -199,7 +199,7 @@ export default {
 
 .gallery-item:hover {
   transform: scale(1.05);
-}
+}*/
 
 .gallery-item img {
   width: 100%;
@@ -208,7 +208,7 @@ export default {
   display: block;
 }
 
-.gallery-overlay {
+/*.gallery-overlay {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -216,7 +216,7 @@ export default {
   background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
   padding: 20px;
   color: white;
-}
+}*/
 
 .gallery-overlay p {
   font-size: 1.2rem;

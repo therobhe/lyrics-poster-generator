@@ -162,11 +162,60 @@ export default {
       } else if (this.lyrics.length >= 4000) {
         minFontSize = 6
       } else {
-        // Linear interpolation between 12 and 6
+        // Linear Interpolation between 12 and 6
         minFontSize = 12 - ((this.lyrics.length - 1200) / (4000 - 1200)) * (12 - 6)
       }
       const fontSize = Math.max(minFontSize, Math.min(32, 600 / this.lyrics.length))
-      const charSpacingPx = fontSize * 1.1
+
+      // Constant gap between each rotation
+      const rotationGap = 22 // px
+
+      // Total angle for spiral
+      const totalAngle = Math.PI * 2 * totalRotations
+
+      // Calculate angular step per character
+      const angleStep = totalAngle / this.lyrics.length
+
+      for(let i = 0; i < this.lyrics.length; i++) {
+        const angle = i * angleStep
+        // Each full rotation increases radius by rotationGap
+        const currentRadius = startRadius + (rotationGap * angle / (Math.PI * 2))
+
+        const x = centerX + currentRadius * Math.cos(angle)
+        const y = centerY + currentRadius * Math.sin(angle)
+
+        letters.push({
+          char: this.lyrics[i],
+          x: x,
+          y: y,
+          angle: (angle * 180 / Math.PI) + 90,
+          fontSize: fontSize,
+          letterSpacing: 0
+        })
+      }
+
+      return letters
+    },
+    printSpiralLetters() {
+      if(!this.lyrics) return []
+
+      const letters = []
+      const centerX = this.svgSize / 2
+      const centerY = this.svgSize / 2
+      const startRadius = 120 // Increased for print
+      const totalRotations = 9
+
+      // Interpolated minimum font-size
+      let minFontSize
+      if (this.lyrics.length <= 1200) {
+        minFontSize = 12
+      } else if (this.lyrics.length >= 4000) {
+        minFontSize = 6
+      } else {
+        // Linear Interpolation between 12 and 6
+        minFontSize = 12 - ((this.lyrics.length - 1200) / (4000 - 1200)) * (12 - 6)
+      }
+      const fontSize = Math.max(minFontSize, Math.min(32, 600 / this.lyrics.length))
 
       // Constant gap between each rotation
       const rotationGap = 22 // px
@@ -271,7 +320,7 @@ export default {
 
             // Clean and format the lyrics for spiral display
             const cleanedLyrics = lyricsText
-            .replace(/\[.*?\]/g, '') // Remove timestamp tags from synced lyrics
+            .replace(/\[.*?/g, '') // Remove timestamp tags from synced lyrics
             .replace(/\n+/g, ' ')
             .replace(/\s+/g, ' ')
             .trim()
@@ -301,7 +350,7 @@ export default {
 
     formatSyncedLyrics(syncedLyrics) {
       // Remove timestamps and clean up lyrics
-      return syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2}\]/g, '').replace(/\n+/g, ' ').trim()
+      return syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2}/g, '').replace(/\n+/g, ' ').trim()
     },
 
     handleBlur() {
@@ -312,13 +361,27 @@ export default {
 
     printPoster() {
       const printWindow = window.open('', '_blank')
+      // Generate SVG for print using printSpiralLetters
+      const svgSize = this.svgSize
+      const circleRadius = this.circleRadius
+      const spiralLetters = this.printSpiralLetters
+      const svgHtml = `
+        <svg width="${svgSize}" height="${svgSize}" viewBox="0 0 ${svgSize} ${svgSize}">
+          <circle cx="${svgSize/2}" cy="${svgSize/2}" r="${circleRadius}" fill="none" stroke="black" stroke-width="2"/>
+          <g>
+            ${spiralLetters.map(char =>
+              `<text style="text-transform: uppercase; font-family: Inter, system-ui, sans-serif; font-weight: bold; font-size: ${char.fontSize}px;" x="${char.x}" y="${char.y}" transform="rotate(${char.angle} ${char.x} ${char.y})" text-anchor="middle" alignment-baseline="middle">${char.char}</text>`
+            ).join('')}
+          </g>
+        </svg>
+      `
       const posterHTML = `
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
           <title>${this.songData.trackName} - ${this.songData.artistName}</title>
           <style>
-            :host, .lyrics-poster, .lyrics-poster * {
+            :host, .lyrics-poster * {
               font-family: 'Inter', system-ui, sans-serif !important;
               text-transform: uppercase !important;
             }
@@ -340,12 +403,29 @@ export default {
               font-weight: 700;
               margin: 10px 0;
               text-align: left;
+              text-transform: uppercase !important;
             }
             .poster-artist {
               font-family: 'Inter', system-ui, sans-serif;
               font-size: 18px;
               font-weight: 400;
               margin: 5px 0 20px;
+              text-align: left;
+              text-transform: uppercase !important;
+            }
+            .artist-row {
+              display: flex;
+              align-items: center;
+              width: 100%;
+              margin-top: 16px;
+              margin-bottom: 72px; /* Increased gap for print */
+            }
+            .artist-divider {
+              width: 70%;
+              height: 0;
+              border-bottom: 4px solid #000;
+              margin-right: 16px;
+              display: inline-block;
             }
             svg {
               max-width: 100%;
@@ -362,8 +442,11 @@ export default {
         <body>
           <div class="poster">
             <h1 class="poster-title">${this.songData.trackName}</h1>
-            <h2 class="poster-artist">${this.songData.artistName}</h2>
-            ${this.$el.querySelector('.spiral-container').innerHTML}
+            <div class="artist-row">
+              <div class="artist-divider"></div>
+              <span class="poster-artist">${this.songData.artistName}</span>
+            </div>
+            ${svgHtml}
           </div>
         </body>
         </html>
@@ -418,12 +501,12 @@ export default {
 
 .poster-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 3rem;
   width: 100%;
 }
 
 .poster-title {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
   color: #333;
   margin: 0 0 10px;
@@ -561,7 +644,7 @@ export default {
 
 .suggestion-item {
   padding: 15px;
-  cursor: pointer;
+  cursor: poInter;
   transition: background 0.2s ease;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -641,7 +724,7 @@ export default {
   border-radius: 12px;
   font-size: 1.2rem;
   font-weight: 600;
-  cursor: pointer;
+  cursor: poInter;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
 }
@@ -670,7 +753,7 @@ export default {
   color: white;
   border: none;
   border-radius: 6px;
-  cursor: pointer;
+  cursor: poInter;
   transition: background 0.2s ease;
 }
 
