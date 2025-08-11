@@ -152,11 +152,20 @@ export default {
       const letters = []
       const centerX = this.svgSize / 2
       const centerY = this.svgSize / 2
-      const startRadius = 120
+      const startRadius = 110
       const totalRotations = 9
 
-      // Font size logic
-      const fontSize = Math.max(12, Math.min(32, 600 / this.lyrics.length))
+      // Interpolated minimum font-size
+      let minFontSize
+      if (this.lyrics.length <= 1200) {
+        minFontSize = 12
+      } else if (this.lyrics.length >= 4000) {
+        minFontSize = 6
+      } else {
+        // Linear interpolation between 12 and 6
+        minFontSize = 12 - ((this.lyrics.length - 1200) / (4000 - 1200)) * (12 - 6)
+      }
+      const fontSize = Math.max(minFontSize, Math.min(32, 600 / this.lyrics.length))
       const charSpacingPx = fontSize * 1.1
 
       // Constant gap between each rotation
