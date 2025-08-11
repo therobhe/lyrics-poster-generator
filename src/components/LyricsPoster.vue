@@ -267,7 +267,7 @@ export default {
 
       try {
         // Call our proxy server which uses lrclib.net API
-        const response = await axios.get('http://localhost:3001/api/search', {
+        const response = await axios.get('https://lyrics-poster-generator-be.onrender.com/api/search', {
           params: {
             q: this.searchQuery
           }
@@ -300,7 +300,7 @@ export default {
 
       try {
         // Call our proxy server which fetches from lrclib.net API
-        const response = await axios.get('http://localhost:3001/api/lyrics', {
+        const response = await axios.get('https://lyrics-poster-generator-be.onrender.com/api/lyrics', {
           params: {
             artist: this.songData.artistName,
             track: this.songData.trackName,
