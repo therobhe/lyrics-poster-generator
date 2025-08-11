@@ -135,7 +135,7 @@ export default {
   },
   computed: {
     svgSize() {
-      return 500
+      return 650
     },
     circleRadius() {
       // Center circle radius
@@ -143,30 +143,27 @@ export default {
     },
     spiralLetters() {
       if (!this.lyrics) return []
-      
+
       const letters = []
       const centerX = this.svgSize / 2
       const centerY = this.svgSize / 2
-      const startRadius = 70
-      const endRadius = 230
-      const totalRotations = 8
+      const startRadius = 80 // Increased starting radius for better readability inside
+      const endRadius = 200
+      const totalRotations = 10
       const angleStep = (Math.PI * 2 * totalRotations) / this.lyrics.length
-      
+
       let currentRadius = startRadius
-      const radiusIncrement = (endRadius - startRadius) / this.lyrics.length
-      
+      const radiusIncrement = (endRadius - startRadius) / this.lyrics.length * 2
+
       for (let i = 0; i < this.lyrics.length; i++) {
         const angle = i * angleStep
         const x = centerX + currentRadius * Math.cos(angle)
         const y = centerY + currentRadius * Math.sin(angle)
-        
-        // Smaller font size at the beginning, larger at the end
+
         const progress = i / this.lyrics.length
         const fontSize = 10 + progress * 8
-        
-        // Tighter spacing at beginning, looser at end
-        const letterSpacing = 0.05 + progress * 0.1
-        
+        const letterSpacing = 0.15 + progress * 0.15
+
         letters.push({
           char: this.lyrics[i],
           x: x,
@@ -175,10 +172,10 @@ export default {
           fontSize: fontSize,
           letterSpacing: letterSpacing
         })
-        
+
         currentRadius += radiusIncrement
       }
-      
+
       return letters
     }
   },
