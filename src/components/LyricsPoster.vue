@@ -152,22 +152,29 @@ export default {
       const letters = []
       const centerX = this.svgSize / 2
       const centerY = this.svgSize / 2
-      const startRadius = 80 // Increased starting radius for better readability inside
-      const endRadius = 200
-      const totalRotations = 10
-      const angleStep = (Math.PI * 2 * totalRotations) / this.lyrics.length
+      const startRadius = 120
+      const totalRotations = 9
 
-      let currentRadius = startRadius
-      const radiusIncrement = (endRadius - startRadius) / this.lyrics.length * 2
+      // Font size logic
+      const fontSize = Math.max(12, Math.min(32, 600 / this.lyrics.length))
+      const charSpacingPx = fontSize * 1.1
+
+      // Constant gap between each rotation
+      const rotationGap = 22 // px
+
+      // Total angle for spiral
+      const totalAngle = Math.PI * 2 * totalRotations
+
+      // Calculate angular step per character
+      const angleStep = totalAngle / this.lyrics.length
 
       for(let i = 0; i < this.lyrics.length; i++) {
         const angle = i * angleStep
+        // Each full rotation increases radius by rotationGap
+        const currentRadius = startRadius + (rotationGap * angle / (Math.PI * 2))
+
         const x = centerX + currentRadius * Math.cos(angle)
         const y = centerY + currentRadius * Math.sin(angle)
-
-        const progress = i / this.lyrics.length
-        const fontSize = 10 + progress * 8
-        const letterSpacing = 0.15 + progress * 0.15
 
         letters.push({
           char: this.lyrics[i],
@@ -175,10 +182,8 @@ export default {
           y: y,
           angle: (angle * 180 / Math.PI) + 90,
           fontSize: fontSize,
-          letterSpacing: letterSpacing
+          letterSpacing: 0
         })
-
-        currentRadius += radiusIncrement
       }
 
       return letters
@@ -331,7 +336,6 @@ export default {
               font-family: 'Inter', system-ui, sans-serif;
               font-size: 18px;
               font-weight: 400;
-              color: #666;
               margin: 5px 0 20px;
             }
             svg {
