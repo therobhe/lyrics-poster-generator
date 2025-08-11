@@ -201,21 +201,15 @@ export default {
       this.error = null
       
       try {
-        const response = await axios.get('https://itunes.apple.com/search', {
+        // Call our proxy server which uses lrclib.net API
+        const response = await axios.get('http://localhost:3001/api/search', {
           params: {
-            term: this.searchQuery,
-            media: 'music',
-            entity: 'song',
-            limit: 10
+            q: this.searchQuery
           }
         })
         
-        this.suggestions = response.data.results.map(result => ({
-          id: result.trackId,
-          trackName: result.trackName,
-          artistName: result.artistName,
-          albumName: result.collectionName
-        }))
+        // The proxy server already transforms the data to our expected format
+        this.suggestions = response.data
       } catch (error) {
         console.error('Search error:', error)
         this.error = 'Failed to search songs. Please try again.'
@@ -240,41 +234,48 @@ export default {
       this.lyrics = ''
       
       try {
-        // Try to fetch lyrics from lyrics.ovh API
-        const response = await axios.get(
-          `https://api.lyrics.ovh/v1/${this.songData.artistName}/${this.songData.trackName}`
-        )
+        // Call our proxy server which fetches from lrclib.net API
+        const response = await axios.get('http://localhost:3001/api/lyrics', {
+          params: {
+            artist: this.songData.artistName,
+            track: this.songData.trackName,
+            album: this.songData.albumName || undefined,
+            duration: this.songData.duration || undefined
+          }
+        })
         
-        if (response.data && response.data.lyrics) {
-          // Clean and format the lyrics
-          const cleanedLyrics = response.data.lyrics
-            .replace(/\n+/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim()
-          
-          this.lyrics = cleanedLyrics
+        if (response.data) {
+          // Check if the song is instrumental
+          if (response.data.instrumental) {
+            this.lyrics = `${this.songData.trackName} by ${this.songData.artistName} - This is an instrumental track with no lyrics. Enjoy the beautiful spiral design that represents the musical journey of this instrumental piece.`
+            this.error = 'This is an instrumental track.'
+          } else if (response.data.plainLyrics || response.data.lyrics) {
+            // Use plain lyrics if available, otherwise use synced lyrics
+            const lyricsText = response.data.plainLyrics || response.data.lyrics || response.data.syncedLyrics
+            
+            // Clean and format the lyrics for spiral display
+            const cleanedLyrics = lyricsText
+              .replace(/\[.*?\]/g, '') // Remove timestamp tags from synced lyrics
+              .replace(/\n+/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim()
+            
+            this.lyrics = cleanedLyrics
+          } else {
+            throw new Error('No lyrics found')
+          }
         } else {
           throw new Error('No lyrics found')
         }
       } catch (error) {
         console.error('Error fetching lyrics:', error)
         
-        // Try alternative API or use placeholder
-        try {
-          // Alternative: try another lyrics API
-          const searchTerm = `${this.songData.artistName} ${this.songData.trackName}`
-          const response = await axios.get(
-            `https://some-lyrics-api.herokuapp.com/lyrics/${encodeURIComponent(searchTerm)}`
-          )
-          
-          if (response.data && response.data.lyrics) {
-            this.lyrics = this.formatSyncedLyrics(response.data.lyrics)
-          } else {
-            throw new Error('No lyrics found')
-          }
-        } catch (altError) {
-          // If all APIs fail, use placeholder lyrics
-          this.lyrics = `${this.songData.trackName} by ${this.songData.artistName} - These are placeholder lyrics for your beautiful spiral poster. The actual lyrics could not be loaded but you can still see how your poster would look. This spiral design creates a unique vinyl-inspired artwork that captures the essence of your favorite songs in a visually stunning way.`
+        // If API fails, use placeholder lyrics
+        this.lyrics = `${this.songData.trackName} by ${this.songData.artistName} - These are placeholder lyrics for your beautiful spiral poster. The actual lyrics could not be loaded but you can still see how your poster would look. This spiral design creates a unique vinyl-inspired artwork that captures the essence of your favorite songs in a visually stunning way.`
+        
+        if (error.response && error.response.status === 404) {
+          this.error = 'Lyrics not found for this song. Showing placeholder text.'
+        } else {
           this.error = 'Could not load actual lyrics. Showing placeholder text.'
         }
       } finally {
