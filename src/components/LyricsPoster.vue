@@ -6,8 +6,13 @@
         <div class="poster-container">
           <!-- Song Info Header -->
           <div v-if="songData" class="poster-header">
-            <h2 class="poster-title">{{ songData.trackName }}</h2>
-            <h3 class="poster-artist">{{ songData.artistName }}</h3>
+            <div class="poster-header">
+              <h2 class="poster-title">{{ songData.trackName }}</h2>
+              <div class="artist-row">
+                <div class="artist-divider"></div>
+                <div class="poster-artist">{{ songData.artistName }}</div>
+              </div>
+            </div>
           </div>
 
           <!-- Spiral Lyrics Display -->
@@ -320,6 +325,7 @@ export default {
               font-size: 24px;
               font-weight: 700;
               margin: 10px 0;
+              text-align: left;
             }
             .poster-artist {
               font-family: 'Inter', system-ui, sans-serif;
@@ -410,11 +416,36 @@ export default {
   margin: 0 0 10px;
 }
 
+.poster-header {
+  text-align: left;
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+.artist-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.artist-divider {
+  width: 70%;
+  height: 0;
+  border-bottom: 4px solid #000;
+  margin-right: 16px;
+}
+
 .poster-artist {
+  width: 30%;
   font-size: 1.3rem;
   font-weight: 400;
   color: #666;
   margin: 0;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .spiral-display {
