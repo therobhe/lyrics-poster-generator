@@ -9,14 +9,14 @@
             <h2 class="poster-title">{{ songData.trackName }}</h2>
             <h3 class="poster-artist">{{ songData.artistName }}</h3>
           </div>
-          
+
           <!-- Spiral Lyrics Display -->
           <div class="spiral-display">
             <div v-if="loading" class="loading-state">
               <div class="loading-spinner"></div>
               <p>Loading lyrics...</p>
             </div>
-            
+
             <div v-else-if="spiralLetters.length" class="spiral-container">
               <svg :width="svgSize" :height="svgSize" :viewBox="`0 0 ${svgSize} ${svgSize}`">
                 <!-- Center circle -->
@@ -41,37 +41,37 @@
                 </g>
               </svg>
             </div>
-            
+
             <div v-else class="empty-state">
               <p>Search for a song to create your poster</p>
             </div>
           </div>
         </div>
       </div>
-      
+
       <!-- Right Column - Search and Controls -->
       <div class="search-controls">
         <div class="search-section">
           <h2>Find Your Song</h2>
           <p class="search-description">Type a song title to search from millions of tracks</p>
-          
+
           <div class="search-input-container">
             <input
-              v-model="searchQuery"
-              @input="handleInput"
-              @focus="showSuggestions = true"
-              @blur="handleBlur"
-              type="text"
-              placeholder="Type a song title..."
-              class="search-input"
+                v-model="searchQuery"
+                @input="handleInput"
+                @focus="showSuggestions = true"
+                @blur="handleBlur"
+                type="text"
+                placeholder="Type a song title..."
+                class="search-input"
             />
-            
+
             <div v-if="showSuggestions && suggestions.length > 0" class="suggestions-dropdown">
               <div
-                v-for="song in suggestions"
-                :key="`${song.artistName}-${song.trackName}-${song.id}`"
-                @mousedown="selectSong(song)"
-                class="suggestion-item"
+                  v-for="song in suggestions"
+                  :key="`${song.artistName}-${song.trackName}-${song.id}`"
+                  @mousedown="selectSong(song)"
+                  class="suggestion-item"
               >
                 <div class="song-info">
                   <div class="track-name">{{ song.trackName }}</div>
@@ -80,12 +80,12 @@
                 </div>
               </div>
             </div>
-            
+
             <div v-if="searchLoading" class="search-loading">
               Searching...
             </div>
           </div>
-          
+
           <!-- Selected Song Info -->
           <div v-if="songData && !loading" class="selected-song">
             <h3>Current Selection</h3>
@@ -95,12 +95,12 @@
               <p v-if="songData.albumName" class="selected-album">{{ songData.albumName }}</p>
             </div>
           </div>
-          
+
           <!-- Print Button -->
           <button v-if="spiralLetters.length" @click="printPoster" class="print-button">
             🖨️ Print Poster
           </button>
-          
+
           <!-- Error Message -->
           <div v-if="error" class="error-message">
             <p>{{ error }}</p>
@@ -125,7 +125,7 @@ export default {
       showSuggestions: false,
       searchLoading: false,
       searchTimeout: null,
-      
+
       // Song and lyrics related
       songData: null,
       lyrics: '',
@@ -142,7 +142,7 @@ export default {
       return 60
     },
     spiralLetters() {
-      if (!this.lyrics) return []
+      if(!this.lyrics) return []
 
       const letters = []
       const centerX = this.svgSize / 2
@@ -155,7 +155,7 @@ export default {
       let currentRadius = startRadius
       const radiusIncrement = (endRadius - startRadius) / this.lyrics.length * 2
 
-      for (let i = 0; i < this.lyrics.length; i++) {
+      for(let i = 0; i < this.lyrics.length; i++) {
         const angle = i * angleStep
         const x = centerX + currentRadius * Math.cos(angle)
         const y = centerY + currentRadius * Math.sin(angle)
@@ -183,20 +183,20 @@ export default {
     handleInput() {
       clearTimeout(this.searchTimeout)
       this.searchTimeout = setTimeout(() => {
-        if (this.searchQuery.trim()) {
+        if(this.searchQuery.trim()) {
           this.searchSongs()
         } else {
           this.suggestions = []
         }
       }, 300)
     },
-    
+
     async searchSongs() {
-      if (!this.searchQuery.trim()) return
-      
+      if(!this.searchQuery.trim()) return
+
       this.searchLoading = true
       this.error = null
-      
+
       try {
         // Call our proxy server which uses lrclib.net API
         const response = await axios.get('http://localhost:3001/api/search', {
@@ -204,17 +204,17 @@ export default {
             q: this.searchQuery
           }
         })
-        
+
         // The proxy server already transforms the data to our expected format
         this.suggestions = response.data
-      } catch (error) {
+      } catch(error) {
         console.error('Search error:', error)
         this.error = 'Failed to search songs. Please try again.'
       } finally {
         this.searchLoading = false
       }
     },
-    
+
     selectSong(song) {
       this.songData = song
       this.searchQuery = `${song.trackName} - ${song.artistName}`
@@ -222,14 +222,14 @@ export default {
       this.suggestions = []
       this.fetchLyrics()
     },
-    
+
     async fetchLyrics() {
-      if (!this.songData) return
-      
+      if(!this.songData) return
+
       this.loading = true
       this.error = null
       this.lyrics = ''
-      
+
       try {
         // Call our proxy server which fetches from lrclib.net API
         const response = await axios.get('http://localhost:3001/api/lyrics', {
@@ -240,23 +240,23 @@ export default {
             duration: this.songData.duration || undefined
           }
         })
-        
-        if (response.data) {
+
+        if(response.data) {
           // Check if the song is instrumental
-          if (response.data.instrumental) {
+          if(response.data.instrumental) {
             this.lyrics = `${this.songData.trackName} by ${this.songData.artistName} - This is an instrumental track with no lyrics. Enjoy the beautiful spiral design that represents the musical journey of this instrumental piece.`
             this.error = 'This is an instrumental track.'
-          } else if (response.data.plainLyrics || response.data.lyrics) {
+          } else if(response.data.plainLyrics || response.data.lyrics) {
             // Use plain lyrics if available, otherwise use synced lyrics
             const lyricsText = response.data.plainLyrics || response.data.lyrics || response.data.syncedLyrics
-            
+
             // Clean and format the lyrics for spiral display
             const cleanedLyrics = lyricsText
-              .replace(/\[.*?\]/g, '') // Remove timestamp tags from synced lyrics
-              .replace(/\n+/g, ' ')
-              .replace(/\s+/g, ' ')
-              .trim()
-            
+            .replace(/\[.*?\]/g, '') // Remove timestamp tags from synced lyrics
+            .replace(/\n+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+
             this.lyrics = cleanedLyrics
           } else {
             throw new Error('No lyrics found')
@@ -264,13 +264,13 @@ export default {
         } else {
           throw new Error('No lyrics found')
         }
-      } catch (error) {
+      } catch(error) {
         console.error('Error fetching lyrics:', error)
-        
+
         // If API fails, use placeholder lyrics
         this.lyrics = `${this.songData.trackName} by ${this.songData.artistName} - These are placeholder lyrics for your beautiful spiral poster. The actual lyrics could not be loaded but you can still see how your poster would look. This spiral design creates a unique vinyl-inspired artwork that captures the essence of your favorite songs in a visually stunning way.`
-        
-        if (error.response && error.response.status === 404) {
+
+        if(error.response && error.response.status === 404) {
           this.error = 'Lyrics not found for this song. Showing placeholder text.'
         } else {
           this.error = 'Could not load actual lyrics. Showing placeholder text.'
@@ -279,18 +279,18 @@ export default {
         this.loading = false
       }
     },
-    
+
     formatSyncedLyrics(syncedLyrics) {
       // Remove timestamps and clean up lyrics
       return syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2}\]/g, '').replace(/\n+/g, ' ').trim()
     },
-    
+
     handleBlur() {
       setTimeout(() => {
         this.showSuggestions = false
       }, 200)
     },
-    
+
     printPoster() {
       const printWindow = window.open('', '_blank')
       const posterHTML = `
@@ -299,6 +299,10 @@ export default {
         <head>
           <title>${this.songData.trackName} - ${this.songData.artistName}</title>
           <style>
+            :host, .lyrics-poster, .lyrics-poster * {
+              font-family: 'Inter', system-ui, sans-serif !important;
+              text-transform: uppercase !important;
+            }
             body {
               margin: 0;
               padding: 20px;
@@ -345,11 +349,11 @@ export default {
         </body>
         </html>
       `
-      
+
       printWindow.document.write(posterHTML)
       printWindow.document.close()
       printWindow.focus()
-      
+
       setTimeout(() => {
         printWindow.print()
       }, 250)
@@ -380,6 +384,11 @@ export default {
   border-radius: 20px;
   padding: 40px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.poster-preview, .poster-preview * {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  text-transform: uppercase !important;
 }
 
 .poster-container {
@@ -443,8 +452,12 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Right Column - Search and Controls */
@@ -626,11 +639,11 @@ export default {
   .two-column-layout {
     grid-template-columns: 1fr;
   }
-  
+
   .poster-preview {
     order: 2;
   }
-  
+
   .search-controls {
     order: 1;
   }
@@ -640,16 +653,16 @@ export default {
   .lyrics-poster {
     padding: 10px;
   }
-  
+
   .poster-preview,
   .search-controls {
     padding: 20px;
   }
-  
+
   .poster-title {
     font-size: 1.5rem;
   }
-  
+
   .poster-artist {
     font-size: 1.1rem;
   }
