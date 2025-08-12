@@ -51,7 +51,5 @@ npm run build
   - components/ — Vue components
     - Header.vue — Application header
     - HomePage.vue — Main landing page
-    - SearchPage.vue — Lyrics search interface
-    - LyricsPage.vue — Lyrics display page
-    - LyricsPoster.vue — Poster generation component
+    - LyricsPoster.vue — Poster generation component with search interface and preview
 - server.js — Backend server implementation
