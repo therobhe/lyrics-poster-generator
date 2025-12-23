@@ -35,7 +35,7 @@
     </div>
 
     <!-- Selected Song Info -->
-    <div v-if="songData && !loading" class="selected-song">
+    <div v-if="songData && !songData.isPlaceholder && !loading" class="selected-song">
       <h3>Current Selection</h3>
       <div class="selected-song-info">
         <p class="selected-track">{{ songData.trackName }}</p>
@@ -75,7 +75,7 @@ export default {
   watch: {
     songData: {
       handler(newVal) {
-        if (newVal) {
+        if (newVal && !newVal.isPlaceholder) {
           this.searchQuery = `${newVal.trackName} - ${newVal.artistName}`
         }
       },

@@ -24,29 +24,41 @@
 
       <!-- Right Column - Search and Controls -->
       <div class="search-controls">
-        <PosterSearch 
-          :song-data="songData"
-          :loading="loading"
-          @select-song="selectSong"
-        />
-
-        <!-- Style Template Selection -->
-        <StyleSelector 
-          v-if="songData && !loading"
-          v-model="selectedTemplateIndex"
-          :templates="templates"
-        />
-
-        <!-- Print Button -->
-        <button v-if="spiralLetters.length" @click="printPoster" class="print-button">
-          🖨️ Print Poster
-        </button>
-
-        <!-- Error Message -->
-        <div v-if="error" class="error-message">
-          <p>{{ error }}</p>
-          <button v-if="songData" @click="fetchLyrics" class="retry-button">Try Again</button>
+        <div v-if="isInitialLoading" class="skeleton-container">
+          <div class="skeleton-title"></div>
+          <div class="skeleton-description"></div>
+          <div class="skeleton-input"></div>
+          <div class="skeleton-style-title"></div>
+          <div class="skeleton-style-grid">
+            <div v-for="i in 4" :key="i" class="skeleton-style-item"></div>
+          </div>
+          <div class="skeleton-button"></div>
         </div>
+        <template v-else>
+          <PosterSearch 
+            :song-data="songData"
+            :loading="loading"
+            @select-song="selectSong"
+          />
+
+          <!-- Style Template Selection -->
+          <StyleSelector 
+            v-if="songData && !loading"
+            v-model="selectedTemplateIndex"
+            :templates="templates"
+          />
+
+          <!-- Print Button -->
+          <button v-if="spiralLetters.length" @click="printPoster" class="print-button">
+            🖨️ Print Poster
+          </button>
+
+          <!-- Error Message -->
+          <div v-if="error" class="error-message">
+            <p>{{ error }}</p>
+            <button v-if="songData" @click="fetchLyrics" class="retry-button">Try Again</button>
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -70,10 +82,12 @@ export default {
   },
   data() {
     return {
+      isInitialLoading: true,
       songData: {
         trackName: 'Song Title',
         artistName: 'Artist Name',
-        albumName: 'Album Name'
+        albumName: 'Album Name',
+        isPlaceholder: true
       },
       lyrics: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
       loading: false,
@@ -109,6 +123,11 @@ export default {
         }
       ]
     }
+  },
+  mounted() {
+    setTimeout(() => {
+      this.isInitialLoading = false
+    }, 600)
   },
   computed: {
     svgSize() {
@@ -400,5 +419,71 @@ export default {
   transform: scale(0.925);
   transform-origin: top center;
   align-self: flex-start;
+}
+
+/* Skeleton Styles */
+.skeleton-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.skeleton-title {
+  height: 40px;
+  width: 60%;
+  background: #eee;
+  border-radius: 8px;
+}
+
+.skeleton-description {
+  height: 20px;
+  width: 80%;
+  background: #eee;
+  border-radius: 4px;
+}
+
+.skeleton-input {
+  height: 55px;
+  width: 100%;
+  background: #eee;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+.skeleton-style-title {
+  height: 24px;
+  width: 40%;
+  background: #eee;
+  border-radius: 4px;
+}
+
+.skeleton-style-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.skeleton-style-item {
+  aspect-ratio: 1;
+  background: #eee;
+  border-radius: 8px;
+}
+
+.skeleton-button {
+  height: 50px;
+  width: 100%;
+  background: #eee;
+  border-radius: 12px;
+}
+
+.skeleton-title, .skeleton-description, .skeleton-input, .skeleton-style-title, .skeleton-style-item, .skeleton-button {
+  background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 </style>

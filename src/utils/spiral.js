@@ -22,7 +22,7 @@ export function calculateSpiral(lyrics, options = {}) {
 
     // Fine-tuned start radius
     let startRadius = isPrint ? 90 : 85;
-    if (len > 2200 && len <= 4500) {
+    if (len > 1500 && len <= 4500) {
         startRadius = isPrint ? 80 : 75;
     } else if (len > 4500) {
         startRadius = isPrint ? 70 : 95;
@@ -35,9 +35,9 @@ export function calculateSpiral(lyrics, options = {}) {
     } else if (len < 600) {
         fontSize = 28 - ((len - 300) / 300) * (28 - 18);
     } else if (len < 1500) {
-        fontSize = 18 - ((len - 600) / 900) * (18 - 12);
+        fontSize = 18 - ((len - 600) / 900) * (18 - 14);
     } else {
-        fontSize = Math.max(8, 12 - ((len - 1500) / 3000) * 4);
+        fontSize = Math.max(9, 14 - ((len - 1500) / 3000) * 5);
     }
 
     // Adjustments for ultra long lyrics
@@ -45,9 +45,9 @@ export function calculateSpiral(lyrics, options = {}) {
         fontSize = isPrint ? 7 : 6;
     }
 
-    // Slightly larger minimum for the "Jesus of Suburbia" range
-    if (len > 2200 && len <= 4500) {
-        fontSize = Math.max(9, fontSize);
+    // Slightly larger minimum for the medium range
+    if (len > 1500 && len <= 4500) {
+        fontSize = Math.max(11, fontSize);
     }
 
     // Allow even larger if very short
@@ -60,8 +60,8 @@ export function calculateSpiral(lyrics, options = {}) {
     if (len < 600) pitchMultiplier = 2.4;
 
     // Fine-tuned scaling for Long vs Ultra-Long
-    if (len > 2200 && len <= 4500) {
-        pitchMultiplier = 1.55;
+    if (len > 1500 && len <= 4500) {
+        pitchMultiplier = 1.75;
     } else if (len > 4500) {
         pitchMultiplier = 1.35;
     }

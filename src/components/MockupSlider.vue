@@ -16,7 +16,11 @@
             <h2 class="mockup-title" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.trackName }}</h2>
              <div class="mockup-artist-row">
                 <div class="mockup-artist-divider" :style="{ borderColor: currentTemplate.color }"></div>
-                <div class="mockup-artist" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.artistName }}</div>
+                <div class="mockup-artist" :style="{ 
+                  color: currentTemplate.color, 
+                  fontFamily: currentTemplate.fontFamily,
+                  fontSize: mockupArtistFontSize
+                }">{{ songData.artistName }}</div>
              </div>
              <div class="mockup-image-container">
                <img v-if="posterImage" :src="posterImage" class="mockup-poster-img" />
@@ -89,6 +93,15 @@ export default {
       allMockupsLoaded: false,
       posterImage: null,
       renderTimeout: null
+    }
+  },
+  computed: {
+    mockupArtistFontSize() {
+      if (!this.songData?.artistName) return '5px';
+      const len = this.songData.artistName.length;
+      if (len > 30) return '3px';
+      if (len > 20) return '4px';
+      return '5px';
     }
   },
   watch: {
@@ -220,13 +233,13 @@ export default {
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
-  padding: 8% 8% 0 8%;
+  padding: 6% 6% 0 6%;
 }
 
 .mockup-title {
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 700;
-  margin: 0 0 2px;
+  margin: 0 0 1px;
   text-align: center;
   line-height: 1.1;
   width: 100%;
@@ -235,8 +248,8 @@ export default {
 .mockup-artist-row {
   display: flex;
   width: 100%;
-  margin-top: 2px;
-  margin-bottom: 4px;
+  margin-top: 1px;
+  margin-bottom: 3px;
 }
 
 .mockup-artist-divider {
@@ -248,9 +261,8 @@ export default {
 }
 
 .mockup-artist {
-  font-size: 5px;
   font-weight: 500;
-  white-space: normal;
+  white-space: nowrap;
   text-align: right;
   flex: 1;
   line-height: 1;

@@ -7,7 +7,11 @@
           <h2 class="poster-title" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.trackName }}</h2>
           <div class="artist-row">
             <div class="artist-divider" :style="{ borderColor: currentTemplate.color }"></div>
-            <div class="poster-artist" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.artistName }}</div>
+            <div class="poster-artist" :style="{ 
+              color: currentTemplate.color, 
+              fontFamily: currentTemplate.fontFamily,
+              fontSize: artistFontSize
+            }">{{ songData.artistName }}</div>
           </div>
         </div>
       </div>
@@ -80,6 +84,13 @@ export default {
         background: this.currentTemplate.background,
         color: this.currentTemplate.color
       }
+    },
+    artistFontSize() {
+      if (!this.songData?.artistName) return '1.1rem';
+      const len = this.songData.artistName.length;
+      if (len > 30) return '0.7rem';
+      if (len > 20) return '0.85rem';
+      return '1.1rem';
     }
   }
 }
@@ -118,38 +129,37 @@ export default {
 .poster-header {
   text-align: left;
   width: 100%;
-  padding: 40px 40px 0 40px;
+  padding: 30px 30px 0 30px;
   box-sizing: border-box;
 }
 
 .poster-title {
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   font-weight: 700;
-  margin: 0 0 -24px;
+  margin: 0 0 -18px;
 }
 
 .artist-row {
   display: flex;
   align-items: flex-start;
   width: 100%;
-  margin-top: 24px;
+  margin-top: 18px;
 }
 
 .artist-divider {
   flex-grow: 1;
   height: 0;
-  border-bottom: 3px solid currentColor;
-  margin-right: 16px;
-  margin-top: 12px;
+  border-bottom: 2px solid currentColor;
+  margin-right: 12px;
+  margin-top: 10px;
 }
 
 .poster-artist {
-  max-width: 40%;
-  font-size: 1.2rem;
+  max-width: 50%;
   font-weight: 500;
   margin: 0;
   text-align: right;
-  white-space: normal;
+  white-space: nowrap;
   line-height: 1.2;
 }
 
@@ -160,7 +170,7 @@ export default {
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  padding-bottom: 40px;
+  padding-bottom: 20px;
   box-sizing: border-box;
 }
 
