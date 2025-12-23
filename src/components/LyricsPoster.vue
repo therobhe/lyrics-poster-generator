@@ -2,15 +2,15 @@
   <div class="lyrics-poster">
     <div class="two-column-layout">
       <!-- Left Column - Poster Preview -->
-      <div class="poster-preview">
-        <div class="poster-container">
+      <div class="poster-preview" :style="previewStyle">
+        <div class="poster-container" :style="{ color: currentTemplate.color }">
           <!-- Song Info Header -->
           <div v-if="songData" class="poster-header">
-            <div class="poster-header">
-              <h2 class="poster-title">{{ songData.trackName }}</h2>
+            <div>
+              <h2 class="poster-title" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.trackName }}</h2>
               <div class="artist-row">
-                <div class="artist-divider"></div>
-                <div class="poster-artist">{{ songData.artistName }}</div>
+                <div class="artist-divider" :style="{ borderColor: currentTemplate.color }"></div>
+                <div class="poster-artist" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.artistName }}</div>
               </div>
             </div>
           </div>
@@ -30,7 +30,7 @@
                     :cy="svgSize/2"
                     :r="circleRadius"
                     fill="none"
-                    stroke="black"
+                    :stroke="currentTemplate.color"
                     stroke-width="2"
                 />
                 <g>
@@ -40,7 +40,8 @@
                         text-anchor="middle"
                         alignment-baseline="middle"
                         class="circle-lyrics-letter"
-                        :style="`font-family: 'Inter', system-ui, sans-serif; letter-spacing: ${char.letterSpacing}em; font-weight: bold; font-size: ${char.fontSize}px;`">
+                        :fill="currentTemplate.color"
+                        :style="`font-family: ${currentTemplate.fontFamily}, sans-serif; letter-spacing: ${char.letterSpacing}em; font-weight: bold; font-size: ${char.fontSize}px;`">
                     {{ char.char }}
                   </text>
                 </g>
@@ -101,6 +102,26 @@
             </div>
           </div>
 
+          <!-- Style Template Selection -->
+          <div v-if="songData && !loading" class="style-selection">
+            <h3>Choose a Style</h3>
+            <div class="templates-grid">
+              <div 
+                v-for="(template, index) in templates" 
+                :key="index"
+                class="template-card"
+                :class="{ active: selectedTemplateIndex === index }"
+                :style="{ background: template.background, color: template.color, fontFamily: template.fontFamily }"
+                @click="selectedTemplateIndex = index"
+              >
+                <div class="template-preview-content">
+                  <span class="template-aa">Aa</span>
+                  <span class="template-name">{{ template.name }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Print Button -->
           <button v-if="spiralLetters.length" @click="printPoster" class="print-button">
             🖨️ Print Poster
@@ -131,16 +152,53 @@ export default {
       searchLoading: false,
       searchTimeout: null,
 
-      // Song and lyrics related
       songData: null,
       lyrics: '',
       loading: false,
-      error: null
+      error: null,
+
+      // Styling Templates
+      selectedTemplateIndex: 0,
+      templates: [
+        {
+          name: 'Classic',
+          background: '#ffffff',
+          color: '#000000',
+          fontFamily: "'Inter', sans-serif"
+        },
+        {
+          name: 'Mono',
+          background: '#f0f0f0',
+          color: '#333333',
+          fontFamily: "'Courier New', monospace"
+        },
+        {
+          name: 'Elegant',
+          background: '#F9F5F0',
+          color: '#3E2723',
+          fontFamily: "'Times New Roman', serif"
+        },
+        {
+          name: 'Dark',
+          background: '#1a1a1a',
+          color: '#ffffff',
+          fontFamily: "'Inter', sans-serif"
+        }
+      ]
     }
   },
   computed: {
     svgSize() {
       return 650
+    },
+    currentTemplate() {
+      return this.templates[this.selectedTemplateIndex]
+    },
+    previewStyle() {
+      return {
+        background: this.currentTemplate.background,
+        color: this.currentTemplate.color
+      }
     },
     circleRadius() {
       // Center circle radius
@@ -152,34 +210,45 @@ export default {
       const letters = []
       const centerX = this.svgSize / 2
       const centerY = this.svgSize / 2
-      const startRadius = 85 // Slightly reduced start radius
+      const startRadius = 85 
       
-      // Interpolated minimum font-size
-      let minFontSize
-      if (this.lyrics.length <= 1200) {
-        minFontSize = 14 // Increased base size
-      } else if (this.lyrics.length >= 4000) {
-        minFontSize = 8 // Increased min size
-      } else {
-        // Linear Interpolation
-        minFontSize = 14 - ((this.lyrics.length - 1200) / (4000 - 1200)) * (14 - 8)
-      }
-      const fontSize = Math.max(minFontSize, Math.min(36, 600 / this.lyrics.length))
+      // Basic font size logic
+      let fontSize
+      const len = this.lyrics.length
 
-      const rotationGap = fontSize * 1.2 // Dynamic gap based on font size
+      // Heuristic adjustment for font size based on length
+      if (len < 300) {
+        fontSize = 28
+      } else if (len < 600) {
+        // Interpolate between 28 and 18
+        fontSize = 28 - ((len - 300) / 300) * (28 - 18)
+      } else if (len < 1500) {
+        // Interpolate between 18 and 12
+        fontSize = 18 - ((len - 600) / 900) * (18 - 12)
+      } else {
+        // Slowly decrease from 12 down to 8
+        fontSize = Math.max(8, 12 - ((len - 1500) / 3000) * 4)
+      }
+
+      // Allow even larger if very short
+      if(len < 100) fontSize = 34
+
+      // Increase spacing between rows (pitch)
+      // Even more breathing room requested:
+      let pitchMultiplier = 1.9 // Base increased from 1.6
+      if (len < 600) pitchMultiplier = 2.4 // Significantly increased for short lyrics
+
+      const rotationGap = fontSize * pitchMultiplier
 
       let currentAngle = 0
       let currentRadius = startRadius
       
-      // Estimate char width factor (approximate for variable width font)
+      // Char width factor
       const charWidthFactor = 0.6 
 
-      for(let i = 0; i < this.lyrics.length; i++) {
+      for(let i = 0; i < len; i++) {
         const char = this.lyrics[i]
         
-        // Calculate arc length for this character
-        // We use a constant width assumption improved by a factor
-        // For distinct characters we might need a canvas measureText, but simple approximation works for artistic spirals
         const charWidth = fontSize * charWidthFactor
         
         // dTheta = arcLength / radius
@@ -197,10 +266,8 @@ export default {
           letterSpacing: 0
         })
         
-        // Increment angle
         currentAngle += angleStep
         
-        // Increment radius: dr = (gap / 2PI) * dTheta
         currentRadius += (rotationGap / (2 * Math.PI)) * angleStep
       }
 
@@ -214,23 +281,31 @@ export default {
       const centerY = this.svgSize / 2
       const startRadius = 90
       
-      let minFontSize
-      if (this.lyrics.length <= 1200) {
-        minFontSize = 14
-      } else if (this.lyrics.length >= 4000) {
-        minFontSize = 8
+      let fontSize
+      const len = this.lyrics.length
+
+      if (len < 300) {
+        fontSize = 28
+      } else if (len < 600) {
+        fontSize = 28 - ((len - 300) / 300) * (28 - 18)
+      } else if (len < 1500) {
+        fontSize = 18 - ((len - 600) / 900) * (18 - 12)
       } else {
-        minFontSize = 14 - ((this.lyrics.length - 1200) / (4000 - 1200)) * (14 - 8)
+        fontSize = Math.max(8, 12 - ((len - 1500) / 3000) * 4)
       }
-      const fontSize = Math.max(minFontSize, Math.min(36, 600 / this.lyrics.length))
       
-      const rotationGap = fontSize * 1.2
+      if(len < 100) fontSize = 34
+
+      let pitchMultiplier = 1.9
+      if (len < 600) pitchMultiplier = 2.4
+
+      const rotationGap = fontSize * pitchMultiplier
 
       let currentAngle = 0
       let currentRadius = startRadius
       const charWidthFactor = 0.6 
 
-      for(let i = 0; i < this.lyrics.length; i++) {
+      for(let i = 0; i < len; i++) {
         const char = this.lyrics[i]
         const charWidth = fontSize * charWidthFactor
         const angleStep = charWidth / currentRadius
@@ -372,16 +447,6 @@ export default {
       const svgSize = this.svgSize
       const circleRadius = this.circleRadius
       const spiralLetters = this.printSpiralLetters
-      const svgHtml = `
-        <svg width="${svgSize}" height="${svgSize}" viewBox="0 0 ${svgSize} ${svgSize}">
-          <circle cx="${svgSize/2}" cy="${svgSize/2}" r="${circleRadius}" fill="none" stroke="black" stroke-width="2"/>
-          <g>
-            ${spiralLetters.map(char =>
-              `<text style="text-transform: uppercase; font-family: Inter, system-ui, sans-serif; font-weight: bold; font-size: ${char.fontSize}px;" x="${char.x}" y="${char.y}" transform="rotate(${char.angle} ${char.x} ${char.y})" text-anchor="middle" alignment-baseline="middle">${char.char}</text>`
-            ).join('')}
-          </g>
-        </svg>
-      `
       const posterHTML = `
         <!DOCTYPE html>
         <html lang="en">
@@ -389,7 +454,7 @@ export default {
           <title>${this.songData.trackName} - ${this.songData.artistName}</title>
           <style>
             :host, .lyrics-poster * {
-              font-family: 'Inter', system-ui, sans-serif !important;
+              font-family: ${this.currentTemplate.fontFamily} !important;
               text-transform: uppercase !important;
             }
             body {
@@ -399,13 +464,15 @@ export default {
               justify-content: center;
               align-items: center;
               min-height: 100vh;
-              background: white;
+              background: ${this.currentTemplate.background};
+              color: ${this.currentTemplate.color};
             }
             .poster {
               text-align: center;
             }
             .poster-title {
-              font-family: 'Inter', system-ui, sans-serif;
+              font-family: ${this.currentTemplate.fontFamily};
+              color: ${this.currentTemplate.color};
               font-size: 24px;
               font-weight: 700;
               margin: 10px 0;
@@ -413,7 +480,8 @@ export default {
               text-transform: uppercase !important;
             }
             .poster-artist {
-              font-family: 'Inter', system-ui, sans-serif;
+              font-family: ${this.currentTemplate.fontFamily};
+              color: ${this.currentTemplate.color};
               font-size: 18px;
               font-weight: 400;
               margin: 5px 0 20px;
@@ -431,7 +499,7 @@ export default {
             .artist-divider {
               width: 70%;
               height: 0;
-              border-bottom: 4px solid #000;
+              border-bottom: 4px solid ${this.currentTemplate.color};
               margin-right: 16px;
               margin-top: 12px; /* Align with text top approximately */
               display: inline-block;
@@ -444,6 +512,9 @@ export default {
               body {
                 margin: 0;
                 padding: 0;
+                background: ${this.currentTemplate.background} !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
               }
             }
           </style>
@@ -455,7 +526,14 @@ export default {
               <div class="artist-divider"></div>
               <span class="poster-artist">${this.songData.artistName}</span>
             </div>
-            ${svgHtml}
+            <svg width="${svgSize}" height="${svgSize}" viewBox="0 0 ${svgSize} ${svgSize}">
+              <circle cx="${svgSize/2}" cy="${svgSize/2}" r="${circleRadius}" fill="none" stroke="${this.currentTemplate.color}" stroke-width="2"/>
+              <g>
+                ${spiralLetters.map(char =>
+                  `<text fill="${this.currentTemplate.color}" style="text-transform: uppercase; font-family: ${this.currentTemplate.fontFamily}; font-weight: bold; font-size: ${char.fontSize}px;" x="${char.x}" y="${char.y}" transform="rotate(${char.angle} ${char.x} ${char.y})" text-anchor="middle" alignment-baseline="middle">${char.char}</text>`
+                ).join('')}
+              </g>
+            </svg>
           </div>
         </body>
         </html>
@@ -493,13 +571,15 @@ export default {
 .poster-preview {
   background: white;
   border-radius: 2px; /* Sharper corners for poster look */
-  padding: 40px;
+  /* Remove padding to allow spiral to go full width */
+  padding: 0;
   box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.2); /* Deep, soft shadow */
   border: 1px solid #eee;
   aspect-ratio: 3/4; /* Instagram portrait ratio */
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden; /* clean edges */
 }
 
 .poster-preview, .poster-preview * {
@@ -513,13 +593,14 @@ export default {
   align-items: center;
   width: 100%;
   height: 100%;
-  justify-content: space-between;
 }
 
 .poster-header {
   text-align: center;
   margin-bottom: 3rem;
   width: 100%;
+  padding: 40px 40px 0 40px; /* Add padding here instead */
+  box-sizing: border-box;
 }
 
 .poster-title {
@@ -575,8 +656,65 @@ export default {
   align-items: center;
 }
 
-.circle-lyrics-letter {
-  fill: black;
+
+
+/* Template Selection UI */
+.style-selection {
+  margin-bottom: 25px;
+}
+
+.style-selection h3 {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 0 0 15px;
+}
+
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.template-card {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  cursor: poInter;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.template-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+}
+
+.template-card.active {
+  border-color: #764ba2;
+  transform: scale(1.05);
+}
+
+.template-preview-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.template-aa {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.template-name {
+  font-size: 9px;
+  opacity: 0.8;
+  text-transform: uppercase;
 }
 
 .loading-state,
