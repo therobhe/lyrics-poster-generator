@@ -94,3 +94,57 @@ export function calculateSpiral(lyrics, options = {}) {
 
     return letters;
 }
+
+/**
+ * Renders the spiral letters to a canvas.
+ * 
+ * @param {HTMLCanvasElement} canvas - The canvas to draw on
+ * @param {Array} letters - The spiral letters data
+ * @param {Object} template - The style template
+ * @param {Object} options - Additional options
+ */
+export function renderSpiralToCanvas(canvas, letters, template, options = {}) {
+    if (!canvas || !letters || !template) return;
+
+    const {
+        svgSize = 650,
+        circleRadius = 60,
+        scale = 1
+    } = options;
+
+    const ctx = canvas.getContext('2d');
+    const size = svgSize * scale;
+
+    canvas.width = size;
+    canvas.height = size;
+
+    // Clear and set background
+    ctx.fillStyle = template.background;
+    ctx.fillRect(0, 0, size, size);
+
+    // Draw center circle
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, circleRadius * scale, 0, Math.PI * 2);
+    ctx.strokeStyle = template.color;
+    ctx.lineWidth = 2 * scale;
+    ctx.stroke();
+
+    // Draw letters
+    ctx.fillStyle = template.color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    letters.forEach(char => {
+        ctx.save();
+        const x = char.x * scale;
+        const y = char.y * scale;
+        const fontSize = char.fontSize * scale;
+
+        ctx.translate(x, y);
+        ctx.rotate((char.angle - 90) * Math.PI / 180);
+        ctx.font = `bold ${fontSize}px ${template.fontFamily}`;
+        ctx.fillText(char.char, 0, 0);
+        ctx.restore();
+    });
+}
+

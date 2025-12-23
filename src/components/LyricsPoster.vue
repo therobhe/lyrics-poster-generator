@@ -14,6 +14,7 @@
 
         <!-- Mockups Slider -->
         <MockupSlider 
+          v-if="showMockups"
           :song-data="songData"
           :spiral-letters="spiralLetters"
           :current-template="currentTemplate"
@@ -72,6 +73,7 @@ export default {
       songData: null,
       lyrics: '',
       loading: false,
+      showMockups: false,
       error: null,
 
       // Styling Templates
@@ -128,6 +130,7 @@ export default {
       if(!this.songData) return
 
       this.loading = true
+      this.showMockups = false
       this.error = null
       this.lyrics = ''
 
@@ -155,6 +158,11 @@ export default {
             .trim()
 
             this.lyrics = cleanedLyrics
+            
+            // Delay mockup rendering to keep UI responsive
+            setTimeout(() => {
+              this.showMockups = true
+            }, 500)
           } else {
             throw new Error('No lyrics found')
           }
@@ -170,6 +178,11 @@ export default {
         } else {
           this.error = 'Could not load actual lyrics. Showing placeholder text.'
         }
+        
+        // Still show mockups for placeholder
+        setTimeout(() => {
+          this.showMockups = true
+        }, 500)
       } finally {
         this.loading = false
       }

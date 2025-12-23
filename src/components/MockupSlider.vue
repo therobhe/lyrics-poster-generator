@@ -18,20 +18,20 @@
                 <div class="mockup-artist-divider" :style="{ borderColor: currentTemplate.color }"></div>
                 <div class="mockup-artist" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.artistName }}</div>
              </div>
-             <svg viewBox="0 0 650 650" class="mockup-svg">
-              <circle cx="325" cy="325" r="60" fill="none" :stroke="currentTemplate.color" stroke-width="2"/>
-              <g>
-                <text v-for="(char, index) in spiralLetters" :key="index" :fill="currentTemplate.color" :style="{ fontSize: char.fontSize + 'px', fontFamily: currentTemplate.fontFamily, fontWeight: 'bold' }" :x="char.x" :y="char.y" :transform="`rotate(${char.angle} ${char.x} ${char.y})`" text-anchor="middle" alignment-baseline="middle">{{ char.char }}</text>
-              </g>
-             </svg>
+             <div class="mockup-image-container">
+               <img v-if="posterImage" :src="posterImage" class="mockup-poster-img" />
+             </div>
           </div>
         </div>
       </div>
     </div>
+    <!-- Hidden canvas for generating the poster image -->
+    <canvas ref="posterCanvas" style="display: none;"></canvas>
   </div>
 </template>
 
 <script>
+import { renderSpiralToCanvas } from '../utils/spiral'
 import mockupWall from '../assets/mockups/mockup_wall.png'
 import mockupTable from '../assets/mockups/mockup_table.png'
 import mockupAngle from '../assets/mockups/mockup_angle.png'
@@ -86,15 +86,45 @@ export default {
         }
       ],
       mockupsLoadedCount: 0,
-      allMockupsLoaded: false
+      allMockupsLoaded: false,
+      posterImage: null,
+      renderTimeout: null
     }
   },
   watch: {
     songData() {
       this.resetMockupLoading()
+    },
+    spiralLetters: {
+      handler() {
+        this.debouncedRender()
+      },
+      immediate: true
+    },
+    currentTemplate: {
+      handler() {
+        this.debouncedRender()
+      }
     }
   },
   methods: {
+    debouncedRender() {
+      clearTimeout(this.renderTimeout)
+      // Delay rendering to keep UI responsive
+      this.renderTimeout = setTimeout(() => {
+        this.generatePosterImage()
+      }, 300)
+    },
+    generatePosterImage() {
+      if (!this.spiralLetters.length || !this.$refs.posterCanvas) return
+
+      // For mockups, we can use a smaller scale to save memory and time
+      renderSpiralToCanvas(this.$refs.posterCanvas, this.spiralLetters, this.currentTemplate, {
+        scale: 0.5 // 325x325 is enough for thumbnails
+      })
+      
+      this.posterImage = this.$refs.posterCanvas.toDataURL('image/png')
+    },
     onMockupImageLoad() {
       this.mockupsLoadedCount++
       if (this.mockupsLoadedCount >= this.mockups.length) {
@@ -137,6 +167,7 @@ export default {
   scroll-snap-align: start;
   opacity: 0;
   transition: opacity 0.3s ease;
+  content-visibility: auto;
 }
 
 .mockup-card.mockup-loaded {
@@ -225,9 +256,19 @@ export default {
   line-height: 1;
 }
 
-.mockup-svg {
+.mockup-image-container {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.mockup-poster-img {
   width: 100%;
   height: auto;
-  flex: 1;
+  display: block;
 }
 </style>
+

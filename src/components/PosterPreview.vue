@@ -22,7 +22,7 @@
         <div v-else-if="spiralLetters.length" class="spiral-container">
           <svg :viewBox="`0 0 ${svgSize} ${svgSize}`" class="spiral-svg">
             <circle :cx="svgSize/2" :cy="svgSize/2" :r="circleRadius" fill="none" :stroke="currentTemplate.color" stroke-width="2"/>
-            <g class="spiral-group">
+            <g class="spiral-group" v-memo="[spiralLetters, currentTemplate]">
               <text v-for="(char, index) in spiralLetters"
                 :key="index"
                 :fill="currentTemplate.color"
