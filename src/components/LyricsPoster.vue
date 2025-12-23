@@ -747,12 +747,11 @@ export default {
   font-size: 2.5rem;
   font-weight: 700;
   color: #333;
-  margin: 0 0 10px;
+  margin: 0 0 -24px;
 }
 
 .poster-header {
   text-align: left;
-  margin-bottom: 30px;
   width: 100%;
 }
 
