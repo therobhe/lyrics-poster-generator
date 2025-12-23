@@ -56,8 +56,15 @@
         <div v-if="songData && !loading" class="mockup-section">
           <h3>Visualize in Room</h3>
           <div class="mockup-slider">
-            <div v-for="mockup in mockups" :key="mockup.id" class="mockup-card">
-              <img :src="mockup.image" class="mockup-bg" />
+            <!-- Skeleton loading state -->
+            <template v-if="!allMockupsLoaded">
+              <div v-for="n in 4" :key="'skeleton-' + n" class="mockup-card mockup-skeleton">
+                <div class="skeleton-shimmer"></div>
+              </div>
+            </template>
+            <!-- Actual mockups -->
+            <div v-for="mockup in mockups" :key="mockup.id" class="mockup-card" :class="{ 'mockup-loaded': allMockupsLoaded }">
+              <img :src="mockup.image" class="mockup-bg" @load="onMockupImageLoad" />
               <div class="mockup-overlay" :style="mockup.style">
                 <div class="mockup-poster-content" :style="{ background: currentTemplate.background, color: currentTemplate.color }">
                   <h2 class="mockup-title" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.trackName }}</h2>
@@ -206,6 +213,10 @@ export default {
       searchLoading: false,
       searchTimeout: null,
       abortController: null,
+
+      // Mockup loading
+      mockupsLoadedCount: 0,
+      allMockupsLoaded: false,
 
       songData: null,
       lyrics: '',
@@ -440,6 +451,21 @@ export default {
       }, 700) // Increased debounce time
     },
 
+    onMockupImageLoad() {
+      this.mockupsLoadedCount++
+      if (this.mockupsLoadedCount >= this.mockups.length) {
+        // Small delay for smooth transition
+        setTimeout(() => {
+          this.allMockupsLoaded = true
+        }, 100)
+      }
+    },
+
+    resetMockupLoading() {
+      this.mockupsLoadedCount = 0
+      this.allMockupsLoaded = false
+    },
+
     async searchSongs() {
       if(!this.searchQuery.trim()) return
 
@@ -481,6 +507,7 @@ export default {
       this.searchQuery = `${song.trackName} - ${song.artistName}`
       this.showSuggestions = false
       this.suggestions = []
+      this.resetMockupLoading() // Reset loading state for new song
       this.fetchLyrics()
     },
 
@@ -681,17 +708,18 @@ export default {
 /* Left Column - Poster Preview */
 .poster-preview {
   background: white;
-  border-radius: 2px; /* Sharper corners for poster look */
-  /* Remove padding to allow spiral to go full width */
+  border-radius: 2px;
   padding: 0 !important;
-  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.2); /* Deep, soft shadow */
+  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.2);
   border: 1px solid #eee;
-  aspect-ratio: 3/4; /* Instagram portrait ratio */
+  aspect-ratio: 3/4;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden; /* clean edges */
-  width: 100%; /* Ensure it fills container */
+  overflow: hidden;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
 .poster-preview, .poster-preview * {
@@ -1097,13 +1125,16 @@ export default {
 .preview-column {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 15px;
+  transform: scale(0.65);
+  transform-origin: top center;
+  align-self: flex-start;
 }
 
 .mockup-section h3 {
   font-size: 1.2rem;
   color: #666;
-  margin: 0 0 15px;
+  margin: 0 0 10px;
 }
 
 .mockup-slider {
@@ -1116,13 +1147,50 @@ export default {
 }
 
 .mockup-card {
-  flex: 0 0 220px;
+  flex: 0 0 180px;
   position: relative;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   background: #f0f0f0;
   scroll-snap-align: start;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.mockup-card.mockup-loaded {
+  opacity: 1;
+}
+
+.mockup-skeleton {
+  background: #e0e0e0;
+  opacity: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-shimmer {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 .mockup-bg {
