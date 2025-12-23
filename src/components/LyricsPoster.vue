@@ -2,54 +2,77 @@
   <div class="lyrics-poster">
     <div class="two-column-layout">
       <!-- Left Column - Poster Preview -->
-      <div class="poster-preview" :style="previewStyle">
-        <div class="poster-container" :style="{ color: currentTemplate.color }">
-          <!-- Song Info Header -->
-          <div v-if="songData" class="poster-header">
-            <div>
-              <h2 class="poster-title" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.trackName }}</h2>
-              <div class="artist-row">
-                <div class="artist-divider" :style="{ borderColor: currentTemplate.color }"></div>
-                <div class="poster-artist" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.artistName }}</div>
+      <div class="preview-column">
+        <div class="poster-preview" :style="previewStyle">
+          <div class="poster-container" :style="{ color: currentTemplate.color }">
+            <!-- Song Info Header -->
+            <div v-if="songData" class="poster-header">
+              <div>
+                <h2 class="poster-title" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.trackName }}</h2>
+                <div class="artist-row">
+                  <div class="artist-divider" :style="{ borderColor: currentTemplate.color }"></div>
+                  <div class="poster-artist" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.artistName }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Spiral Lyrics Display -->
+            <div class="spiral-display">
+              <div v-if="loading" class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Loading lyrics...</p>
+              </div>
+
+              <div v-else-if="spiralLetters.length" class="spiral-container">
+                <svg :viewBox="`0 0 ${svgSize} ${svgSize}`" class="spiral-svg">
+                  <circle :cx="svgSize/2" :cy="svgSize/2" :r="circleRadius" fill="none" :stroke="currentTemplate.color" stroke-width="2"/>
+                  <g class="spiral-group">
+                    <text v-for="(char, index) in spiralLetters"
+                      :key="index"
+                      :fill="currentTemplate.color"
+                      :style="{
+                        fontSize: char.fontSize + 'px',
+                        fontFamily: currentTemplate.fontFamily,
+                        fontWeight: 'bold'
+                      }"
+                      :x="char.x"
+                      :y="char.y"
+                      :transform="`rotate(${char.angle} ${char.x} ${char.y})`"
+                      text-anchor="middle"
+                      alignment-baseline="middle"
+                    >{{ char.char }}</text>
+                  </g>
+                </svg>
+              </div>
+
+              <div v-else class="empty-state">
+                <p>Search for a song to create your poster</p>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Spiral Lyrics Display -->
-          <div class="spiral-display">
-            <div v-if="loading" class="loading-state">
-              <div class="loading-spinner"></div>
-              <p>Loading lyrics...</p>
-            </div>
-
-            <div v-else-if="spiralLetters.length" class="spiral-container">
-              <svg class="spiral-svg" :width="svgSize" :height="svgSize" :viewBox="`0 0 ${svgSize} ${svgSize}`">
-                <!-- Center circle -->
-                <circle
-                    :cx="svgSize/2"
-                    :cy="svgSize/2"
-                    :r="circleRadius"
-                    fill="none"
-                    :stroke="currentTemplate.color"
-                    stroke-width="2"
-                />
-                <g>
-                  <text v-for="(char, i) in spiralLetters" :key="i"
-                        :x="char.x" :y="char.y"
-                        :transform="`rotate(${char.angle} ${char.x} ${char.y})`"
-                        text-anchor="middle"
-                        alignment-baseline="middle"
-                        class="circle-lyrics-letter"
-                        :fill="currentTemplate.color"
-                        :style="`font-family: ${currentTemplate.fontFamily}, sans-serif; letter-spacing: ${char.letterSpacing}em; font-weight: bold; font-size: ${char.fontSize}px;`">
-                    {{ char.char }}
-                  </text>
-                </g>
-              </svg>
-            </div>
-
-            <div v-else class="empty-state">
-              <p>Search for a song to create your poster</p>
+        <!-- Mockups Slider -->
+        <div v-if="songData && !loading" class="mockup-section">
+          <h3>Visualize in Room</h3>
+          <div class="mockup-slider">
+            <div v-for="mockup in mockups" :key="mockup.id" class="mockup-card">
+              <img :src="mockup.image" class="mockup-bg" />
+              <div class="mockup-overlay" :style="mockup.style">
+                <div class="mockup-poster-content" :style="{ background: currentTemplate.background, color: currentTemplate.color }">
+                  <h2 class="mockup-title" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.trackName }}</h2>
+                   <div class="mockup-artist-row">
+                      <div class="mockup-artist-divider" :style="{ borderColor: currentTemplate.color }"></div>
+                      <div class="mockup-artist" :style="{ color: currentTemplate.color, fontFamily: currentTemplate.fontFamily }">{{ songData.artistName }}</div>
+                   </div>
+                   <svg viewBox="0 0 650 650" class="mockup-svg">
+                    <circle cx="325" cy="325" r="60" fill="none" :stroke="currentTemplate.color" stroke-width="2"/>
+                    <g>
+                      <text v-for="(char, index) in spiralLetters" :key="index" :fill="currentTemplate.color" :style="{ fontSize: char.fontSize + 'px', fontFamily: currentTemplate.fontFamily, fontWeight: 'bold' }" :x="char.x" :y="char.y" :transform="`rotate(${char.angle} ${char.x} ${char.y})`" text-anchor="middle" alignment-baseline="middle">{{ char.char }}</text>
+                    </g>
+                   </svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -140,11 +163,42 @@
 
 <script>
 import axios from 'axios'
+import mockupWall from '../assets/mockups/mockup_wall.png'
+import mockupTable from '../assets/mockups/mockup_table.png'
+import mockupAngle from '../assets/mockups/mockup_angle.png'
+import mockupDesk from '../assets/mockups/mockup_desk.png'
 
 export default {
   name: 'LyricsPoster',
   data() {
     return {
+      // Mockups
+      mockups: [
+        { 
+          id: 'wall', 
+          name: 'Wall', 
+          image: mockupWall, 
+          style: { top: '26%', left: '32.5%', width: '35%', height: '47%', transform: 'scale(0.98)' } // Centered
+        },
+        { 
+          id: 'table', 
+          name: 'Table', 
+          image: mockupTable, 
+          style: { top: '23%', left: '32%', width: '35%', height: '47%', transform: 'perspective(800px) rotateX(-4deg) rotateY(3deg)' } // Leaning back slightly
+        },
+        { 
+          id: 'angle', 
+          name: 'Glass Frame', 
+          image: mockupAngle, 
+          style: { top: '15%', left: '38%', width: '33%', height: '44%', transform: 'perspective(1200px) skewY(12deg) rotateY(-25deg)' } // Strong angle
+        },
+        { 
+          id: 'desk', 
+          name: 'Workspace', 
+          image: mockupDesk, 
+          style: { top: '12%', left: '32%', width: '34.5%', height: '46%', transform: 'perspective(800px) rotateX(-3deg) rotateY(2deg)' } 
+        }
+      ],
       // Search related
       searchQuery: '',
       suggestions: [],
@@ -629,7 +683,7 @@ export default {
   background: white;
   border-radius: 2px; /* Sharper corners for poster look */
   /* Remove padding to allow spiral to go full width */
-  padding: 0;
+  padding: 0 !important;
   box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.2); /* Deep, soft shadow */
   border: 1px solid #eee;
   aspect-ratio: 3/4; /* Instagram portrait ratio */
@@ -637,6 +691,7 @@ export default {
   align-items: center;
   justify-content: center;
   overflow: hidden; /* clean edges */
+  width: 100%; /* Ensure it fills container */
 }
 
 .poster-preview, .poster-preview * {
@@ -701,16 +756,29 @@ export default {
 
 .spiral-display {
   width: 100%;
+  flex-grow: 1; /* Fill remaining space */
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 500px;
+  overflow: hidden; /* Prevent overflow */
+  padding-bottom: 40px; /* Add padding at bottom matching header */
+  box-sizing: border-box;
 }
 
 .spiral-container {
+  width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.spiral-svg {
+  width: 100%;
+  height: 100%;
+  max-width: 90%; /* Leave some margin */
+  max-height: 100%;
+  display: block;
 }
 
 
@@ -988,7 +1056,7 @@ export default {
     grid-template-columns: 1fr;
   }
 
-  .poster-preview {
+  .preview-column {
     order: 2;
   }
 
@@ -1024,4 +1092,97 @@ export default {
     font-size: 1.1rem;
   }
 }
-</style>
+
+/* Mockup Slider Styles */
+.preview-column {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.mockup-section h3 {
+  font-size: 1.2rem;
+  color: #666;
+  margin: 0 0 15px;
+}
+
+.mockup-slider {
+  display: flex;
+  overflow-x: auto;
+  gap: 15px;
+  padding-bottom: 15px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mockup-card {
+  flex: 0 0 220px;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  background: #f0f0f0;
+  scroll-snap-align: start;
+}
+
+.mockup-bg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.mockup-overlay {
+  position: absolute;
+  /* Perspective set in inline styles for specific mockups */
+  overflow: hidden;
+  pointer-events: none; /* Let clicks pass through */
+}
+
+.mockup-poster-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 8% 8% 0 8%; /* Mimic header padding */
+}
+
+.mockup-title {
+  font-size: 8px; /* Tiny for thumbnail */
+  font-weight: 700;
+  margin: 0 0 2px;
+  text-align: center;
+  line-height: 1.1;
+  width: 100%;
+}
+
+.mockup-artist-row {
+  display: flex;
+  width: 100%;
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.mockup-artist-divider {
+  width: 60%;
+  height: 0;
+  border-bottom: 1px solid currentColor;
+  margin-right: 4px;
+  margin-top: 3px;
+}
+
+.mockup-artist {
+  font-size: 5px;
+  font-weight: 500;
+  white-space: normal;
+  text-align: right;
+  flex: 1;
+  line-height: 1;
+}
+
+.mockup-svg {
+  width: 100%;
+  height: auto;
+  flex: 1;
+}</style>
