@@ -152,46 +152,56 @@ export default {
       const letters = []
       const centerX = this.svgSize / 2
       const centerY = this.svgSize / 2
-      const startRadius = 110
-      const totalRotations = 9
-
+      const startRadius = 85 // Slightly reduced start radius
+      
       // Interpolated minimum font-size
       let minFontSize
       if (this.lyrics.length <= 1200) {
-        minFontSize = 12
+        minFontSize = 14 // Increased base size
       } else if (this.lyrics.length >= 4000) {
-        minFontSize = 6
+        minFontSize = 8 // Increased min size
       } else {
-        // Linear Interpolation between 12 and 6
-        minFontSize = 12 - ((this.lyrics.length - 1200) / (4000 - 1200)) * (12 - 6)
+        // Linear Interpolation
+        minFontSize = 14 - ((this.lyrics.length - 1200) / (4000 - 1200)) * (14 - 8)
       }
-      const fontSize = Math.max(minFontSize, Math.min(32, 600 / this.lyrics.length))
+      const fontSize = Math.max(minFontSize, Math.min(36, 600 / this.lyrics.length))
 
-      // Constant gap between each rotation
-      const rotationGap = 22 // px
+      const rotationGap = fontSize * 1.2 // Dynamic gap based on font size
 
-      // Total angle for spiral
-      const totalAngle = Math.PI * 2 * totalRotations
-
-      // Calculate angular step per character
-      const angleStep = totalAngle / this.lyrics.length
+      let currentAngle = 0
+      let currentRadius = startRadius
+      
+      // Estimate char width factor (approximate for variable width font)
+      const charWidthFactor = 0.6 
 
       for(let i = 0; i < this.lyrics.length; i++) {
-        const angle = i * angleStep
-        // Each full rotation increases radius by rotationGap
-        const currentRadius = startRadius + (rotationGap * angle / (Math.PI * 2))
-
-        const x = centerX + currentRadius * Math.cos(angle)
-        const y = centerY + currentRadius * Math.sin(angle)
+        const char = this.lyrics[i]
+        
+        // Calculate arc length for this character
+        // We use a constant width assumption improved by a factor
+        // For distinct characters we might need a canvas measureText, but simple approximation works for artistic spirals
+        const charWidth = fontSize * charWidthFactor
+        
+        // dTheta = arcLength / radius
+        const angleStep = charWidth / currentRadius
+        
+        const x = centerX + currentRadius * Math.cos(currentAngle)
+        const y = centerY + currentRadius * Math.sin(currentAngle)
 
         letters.push({
-          char: this.lyrics[i],
+          char: char,
           x: x,
           y: y,
-          angle: (angle * 180 / Math.PI) + 90,
+          angle: (currentAngle * 180 / Math.PI) + 90,
           fontSize: fontSize,
           letterSpacing: 0
         })
+        
+        // Increment angle
+        currentAngle += angleStep
+        
+        // Increment radius: dr = (gap / 2PI) * dTheta
+        currentRadius += (rotationGap / (2 * Math.PI)) * angleStep
       }
 
       return letters
@@ -202,46 +212,43 @@ export default {
       const letters = []
       const centerX = this.svgSize / 2
       const centerY = this.svgSize / 2
-      const startRadius = 120 // Increased for print
-      const totalRotations = 9
-
-      // Interpolated minimum font-size
+      const startRadius = 90
+      
       let minFontSize
       if (this.lyrics.length <= 1200) {
-        minFontSize = 12
+        minFontSize = 14
       } else if (this.lyrics.length >= 4000) {
-        minFontSize = 6
+        minFontSize = 8
       } else {
-        // Linear Interpolation between 12 and 6
-        minFontSize = 12 - ((this.lyrics.length - 1200) / (4000 - 1200)) * (12 - 6)
+        minFontSize = 14 - ((this.lyrics.length - 1200) / (4000 - 1200)) * (14 - 8)
       }
-      const fontSize = Math.max(minFontSize, Math.min(32, 600 / this.lyrics.length))
+      const fontSize = Math.max(minFontSize, Math.min(36, 600 / this.lyrics.length))
+      
+      const rotationGap = fontSize * 1.2
 
-      // Constant gap between each rotation
-      const rotationGap = 22 // px
-
-      // Total angle for spiral
-      const totalAngle = Math.PI * 2 * totalRotations
-
-      // Calculate angular step per character
-      const angleStep = totalAngle / this.lyrics.length
+      let currentAngle = 0
+      let currentRadius = startRadius
+      const charWidthFactor = 0.6 
 
       for(let i = 0; i < this.lyrics.length; i++) {
-        const angle = i * angleStep
-        // Each full rotation increases radius by rotationGap
-        const currentRadius = startRadius + (rotationGap * angle / (Math.PI * 2))
-
-        const x = centerX + currentRadius * Math.cos(angle)
-        const y = centerY + currentRadius * Math.sin(angle)
+        const char = this.lyrics[i]
+        const charWidth = fontSize * charWidthFactor
+        const angleStep = charWidth / currentRadius
+        
+        const x = centerX + currentRadius * Math.cos(currentAngle)
+        const y = centerY + currentRadius * Math.sin(currentAngle)
 
         letters.push({
-          char: this.lyrics[i],
+          char: char,
           x: x,
           y: y,
-          angle: (angle * 180 / Math.PI) + 90,
+          angle: (currentAngle * 180 / Math.PI) + 90,
           fontSize: fontSize,
           letterSpacing: 0
         })
+        
+        currentAngle += angleStep
+        currentRadius += (rotationGap / (2 * Math.PI)) * angleStep
       }
 
       return letters
@@ -412,19 +419,21 @@ export default {
               margin: 5px 0 20px;
               text-align: left;
               text-transform: uppercase !important;
+              white-space: normal; /* Allow wrapping */
             }
             .artist-row {
               display: flex;
-              align-items: center;
+              align-items: flex-start;
               width: 100%;
               margin-top: 16px;
-              margin-bottom: 72px; /* Increased gap for print */
+              margin-bottom: 72px;
             }
             .artist-divider {
               width: 70%;
               height: 0;
               border-bottom: 4px solid #000;
               margin-right: 16px;
+              margin-top: 12px; /* Align with text top approximately */
               display: inline-block;
             }
             svg {
@@ -483,9 +492,14 @@ export default {
 /* Left Column - Poster Preview */
 .poster-preview {
   background: white;
-  border-radius: 20px;
+  border-radius: 2px; /* Sharper corners for poster look */
   padding: 40px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.2); /* Deep, soft shadow */
+  border: 1px solid #eee;
+  aspect-ratio: 3/4; /* Instagram portrait ratio */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .poster-preview, .poster-preview * {
@@ -497,6 +511,9 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+  height: 100%;
+  justify-content: space-between;
 }
 
 .poster-header {
@@ -520,28 +537,28 @@ export default {
 
 .artist-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* Align to top to handle multi-line */
   width: 100%;
-  margin-top: 16px;
+  margin-top: 24px;
 }
 
 .artist-divider {
-  width: 70%;
+  flex-grow: 1; /* Take up available space */
   height: 0;
-  border-bottom: 4px solid #000;
+  border-bottom: 3px solid #000;
   margin-right: 16px;
+  margin-top: 12px; /* Visual alignment with text */
 }
 
 .poster-artist {
-  width: 30%;
-  font-size: 1.3rem;
-  font-weight: 400;
-  color: #666;
+  max-width: 40%;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #000;
   margin: 0;
-  text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: right; /* Right align the name */
+  white-space: normal; /* Allow wrap */
+  line-height: 1.2;
 }
 
 .spiral-display {
