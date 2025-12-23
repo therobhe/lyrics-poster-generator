@@ -19,7 +19,7 @@
           <p>Loading lyrics...</p>
         </div>
 
-        <div v-else-if="spiralLetters.length" class="spiral-container">
+        <div v-else class="spiral-container">
           <svg :viewBox="`0 0 ${svgSize} ${svgSize}`" class="spiral-svg">
             <circle :cx="svgSize/2" :cy="svgSize/2" :r="circleRadius" fill="none" :stroke="currentTemplate.color" stroke-width="2"/>
             <g class="spiral-group" v-memo="[spiralLetters, currentTemplate]">
@@ -39,10 +39,6 @@
               >{{ char.char }}</text>
             </g>
           </svg>
-        </div>
-
-        <div v-else class="empty-state">
-          <p>Search for a song to create your poster</p>
         </div>
       </div>
     </div>
@@ -184,8 +180,7 @@ export default {
   display: block;
 }
 
-.loading-state,
-.empty-state {
+.loading-state {
   text-align: center;
   color: #999;
 }

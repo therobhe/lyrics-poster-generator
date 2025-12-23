@@ -64,25 +64,25 @@ export default {
           id: 'wall', 
           name: 'Wall', 
           image: mockupWall, 
-          style: { top: '26%', left: '32.5%', width: '35%', height: '47%', transform: 'scale(0.98)' }
+          style: { top: '16%', left: '35.5%', width: '35%', height: '47%', transform: 'scale(0.8)' }
         },
         { 
           id: 'table', 
           name: 'Table', 
           image: mockupTable, 
-          style: { top: '23%', left: '32%', width: '35%', height: '47%', transform: 'perspective(800px) rotateX(-4deg) rotateY(3deg)' }
+          style: { top: '26%', left: '33%', width: '32%', height: '49%', transform: 'perspective(800px) rotateX(-4deg) rotateY(3deg)' }
         },
         { 
           id: 'angle', 
           name: 'Glass Frame', 
           image: mockupAngle, 
-          style: { top: '15%', left: '38%', width: '33%', height: '44%', transform: 'perspective(1200px) skewY(12deg) rotateY(-25deg)' }
+          style: { top: '26%', left: '33%', width: '32%', height: '49%', transform: 'perspective(700px) skewY(0deg) rotateY(-35deg)' }
         },
         { 
           id: 'desk', 
           name: 'Workspace', 
           image: mockupDesk, 
-          style: { top: '12%', left: '32%', width: '34.5%', height: '46%', transform: 'perspective(800px) rotateX(-3deg) rotateY(2deg)' } 
+          style: { top: '25%', left: '24%', width: '29%', height: '49%', transform: 'perspective(1200px) rotateX(359deg) rotateY(36deg) rotateZ(358deg)' } 
         }
       ],
       mockupsLoadedCount: 0,
