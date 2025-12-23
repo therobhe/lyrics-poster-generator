@@ -151,6 +151,7 @@ export default {
       showSuggestions: false,
       searchLoading: false,
       searchTimeout: null,
+      abortController: null,
 
       songData: null,
       lyrics: '',
@@ -210,11 +211,19 @@ export default {
       const letters = []
       const centerX = this.svgSize / 2
       const centerY = this.svgSize / 2
-      const startRadius = 85 
+      
+      const len = this.lyrics.length
+      
+      // Fine-tuned start radius
+      let startRadius = 85
+      if(len > 2200 && len <= 4500) {
+        startRadius = 75 // Intermediate reduction
+      } else if(len > 4500) {
+        startRadius = 95 // Maximum reduction for ultra-long
+      }
       
       // Basic font size logic
       let fontSize
-      const len = this.lyrics.length
 
       // Heuristic adjustment for font size based on length
       if (len < 300) {
@@ -230,6 +239,12 @@ export default {
         fontSize = Math.max(8, 12 - ((len - 1500) / 3000) * 4)
       }
 
+      // Allow even smaller for ultra long lyrics to prevent cut off
+      if (len > 4500) fontSize = 6
+      
+      // Slightly larger minimum for the "Jesus of Suburbia" range
+      if (len > 2200 && len <= 4500) fontSize = Math.max(9, fontSize)
+
       // Allow even larger if very short
       if(len < 100) fontSize = 34
 
@@ -237,7 +252,16 @@ export default {
       // Even more breathing room requested:
       let pitchMultiplier = 1.9 // Base increased from 1.6
       if (len < 600) pitchMultiplier = 2.4 // Significantly increased for short lyrics
-
+      
+      // Fine-tuned scaling for Long vs Ultra-Long
+      if (len > 2200 && len <= 4500) {
+        // "Jesus of Suburbia" range (Long)
+        pitchMultiplier = 1.55 
+      } else if (len > 4500) {
+        // "Königsaura" range (Ultra-Long)
+        pitchMultiplier = 1.35
+      }
+      
       const rotationGap = fontSize * pitchMultiplier
 
       let currentAngle = 0
@@ -279,11 +303,19 @@ export default {
       const letters = []
       const centerX = this.svgSize / 2
       const centerY = this.svgSize / 2
-      const startRadius = 90
+      
+      const len = this.lyrics.length
+      
+      // Fine-tuned start radius for print
+      let startRadius = 90
+      if(len > 2200 && len <= 4500) {
+        startRadius = 80 // Intermediate
+      } else if(len > 4500) {
+        startRadius = 70 // Ultra-long
+      }
       
       let fontSize
-      const len = this.lyrics.length
-
+      
       if (len < 300) {
         fontSize = 28
       } else if (len < 600) {
@@ -294,10 +326,23 @@ export default {
         fontSize = Math.max(8, 12 - ((len - 1500) / 3000) * 4)
       }
       
+      // Allow even smaller for ultra long lyrics to prevent cut off
+      if (len > 4500) fontSize = 7
+      
+      // Slightly larger minimum for the "Jesus of Suburbia" range
+      if (len > 2200 && len <= 4500) fontSize = Math.max(9, fontSize)
+      
       if(len < 100) fontSize = 34
 
       let pitchMultiplier = 1.9
       if (len < 600) pitchMultiplier = 2.4
+      
+      // Fine-tuned scaling for Long vs Ultra-Long
+      if (len > 2200 && len <= 4500) {
+        pitchMultiplier = 1.55
+      } else if (len > 4500) {
+        pitchMultiplier = 1.35
+      }
 
       const rotationGap = fontSize * pitchMultiplier
 
@@ -338,7 +383,7 @@ export default {
         } else {
           this.suggestions = []
         }
-      }, 300)
+      }, 700) // Increased debounce time
     },
 
     async searchSongs() {
@@ -347,21 +392,33 @@ export default {
       this.searchLoading = true
       this.error = null
 
+      // Cancel previous request if exists
+      if (this.abortController) {
+        this.abortController.abort()
+      }
+      this.abortController = new AbortController()
+
       try {
         // Call our proxy server which uses lrclib.net API
         const response = await axios.get('https://lyrics-poster-generator-be.onrender.com/api/search', {
           params: {
             q: this.searchQuery
-          }
+          },
+          signal: this.abortController.signal
         })
 
         // The proxy server already transforms the data to our expected format
         this.suggestions = response.data
       } catch(error) {
+        if (axios.isCancel(error) || error.name === 'AbortError') {
+          // Request cancelled, ignore
+          return
+        }
         console.error('Search error:', error)
         this.error = 'Failed to search songs. Please try again.'
       } finally {
         this.searchLoading = false
+        this.abortController = null
       }
     },
 
